@@ -34,6 +34,15 @@
             color: white;
             margin: 0 auto 20px;
         }
+        .admin-badge {
+            display: none;
+            background: #ff9800;
+            color: white;
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            border-radius: 30px;
+            margin-top: 8px;
+        }
         button {
             background: #e53e3e;
             border: none;
@@ -59,6 +68,7 @@
     <div class="card">
         <div class="avatar" id="avatar"></div>
         <h2 id="username"></h2>
+        <div id="adminBadge" class="admin-badge">👑 管理员</div>
         <p style="color: #7e8c9e; margin-top: 8px;">欢迎回来 👋</p>
         <button onclick="logout()">退出登录</button>
     </div>
@@ -75,6 +85,11 @@
     const userData = JSON.parse(user);
     document.getElementById('username').innerText = userData.username;
     document.getElementById('avatar').innerText = userData.username.charAt(0).toUpperCase();
+    
+    // 如果是管理员，显示管理员标识
+    if (userData.isAdmin) {
+        document.getElementById('adminBadge').style.display = 'inline-block';
+    }
 
     function logout() {
         localStorage.removeItem('currentUser');
