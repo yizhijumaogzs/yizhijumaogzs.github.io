@@ -1,11 +1,551 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
-    <title>我的第一个GitHub网站</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>我的个人站 · 钉钉风格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ========== 设计变量 ========== */
+        :root {
+            /* 钉钉蓝紫色系 [citation:1] */
+            --gradient-start: #3662ff;
+            --gradient-mid: #8a4fff;
+            --gradient-end: #b23bff;
+            --ding-blue: #0077ff;
+            --ding-purple: #6b2eff;
+            --bg-white: #ffffff;
+            --bg-gray: #f5f7fa;
+            --text-dark: #1f2f3a;
+            --text-gray: #5e6c77;
+            --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.1);
+            --radius-card: 24px;
+            --radius-btn: 40px;
+        }
+
+        /* 深色模式（影视飓风风格） */
+        [data-theme="dark"] {
+            --bg-white: #0a0e14;
+            --bg-gray: #11161d;
+            --text-dark: #e8edf2;
+            --text-gray: #8a9aa8;
+            --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            background: var(--bg-gray);
+            color: var(--text-dark);
+            transition: background 0.3s, color 0.2s;
+            scroll-behavior: smooth;
+        }
+
+        /* ========== 导航栏 ========== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        [data-theme="dark"] .navbar {
+            background: rgba(10,14,20,0.9);
+            border-bottom-color: rgba(255,255,255,0.08);
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--ding-blue);
+        }
+
+        /* 魔法棒 + 主题切换 [citation:1] */
+        .magic-btn, .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: 0.2s;
+            background: rgba(0,0,0,0.04);
+        }
+
+        .magic-btn:hover, .theme-toggle:hover {
+            background: rgba(102, 85, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        /* ========== 英雄区 ========== */
+        .hero {
+            text-align: center;
+            padding: 60px 0 40px;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid));
+            color: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: 3.3rem;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 卡片网格 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 28px;
+            margin: 48px 0;
+        }
+        .card {
+            background: var(--bg-white);
+            border-radius: var(--radius-card);
+            padding: 28px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        [data-theme="dark"] .card {
+            border-color: rgba(255,255,255,0.05);
+        }
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+        .card p {
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+        /* ========== 后台管理面板 (双栏) ========== */
+        .admin-panel {
+            background: var(--bg-white);
+            border-radius: 32px;
+            padding: 32px;
+            margin-top: 48px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(102, 85, 255, 0.2);
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 2px solid var(--bg-gray);
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+        }
+        .admin-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .upload-area {
+            background: var(--bg-gray);
+            border: 2px dashed var(--ding-purple);
+            border-radius: 28px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 32px;
+            transition: 0.2s;
+        }
+        .upload-label {
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid));
+            color: white;
+            padding: 12px 28px;
+            border-radius: 40px;
+            display: inline-block;
+            font-weight: 600;
+            border: none;
+            font-size: 1rem;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--bg-gray);
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+        .file-link {
+            color: var(--ding-blue);
+            text-decoration: none;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a2c3e;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            z-index: 999;
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+        .token-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 44px;
+            border: 1px solid #ddd;
+            background: var(--bg-white);
+            color: var(--text-dark);
+            margin: 15px 0;
+        }
+        button.primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-mid));
+            border: none;
+            padding: 10px 20px;
+            border-radius: 34px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        footer {
+            text-align: center;
+            padding: 36px;
+            color: var(--text-gray);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        @media (max-width: 700px) {
+            .navbar { flex-direction: column; }
+            .hero h1 { font-size: 2.2rem; }
+            .container { padding: 24px 20px; }
+        }
+    </style>
 </head>
 <body>
-    <h1>🚀 你好，世界！</h1>
-    <p>我的GitHub Pages网站已经成功上线啦！</p>
+
+<div class="navbar">
+    <div class="logo">✨ yzjm.studio</div>
+    <div class="nav-links">
+        <a href="#">首页</a>
+        <a href="#admin">文件管理</a>
+        <button class="magic-btn" id="magicBtn" aria-label="魔法棒">🪄</button>
+        <button class="theme-toggle" id="themeToggle" aria-label="切换主题">🌓</button>
+    </div>
+</div>
+
+<main class="container">
+    <div class="hero">
+        <div class="hero-badge">⚡ 紫钉能行 · 灵感魔法</div>
+        <h1>简洁 · 高效 · 智能</h1>
+        <p>汲取钉钉的蓝紫能量<br>融合影视飓风的未来感，打造专属空间</p>
+    </div>
+
+    <div class="card-grid">
+        <div class="card">
+            <div class="card-icon">🎨</div>
+            <h3>钉钉视觉</h3>
+            <p>蓝紫渐变、魔法棒元素、圆润图标，AI时代的高效美学[citation:1]</p>
+        </div>
+        <div class="card">
+            <div class="card-icon">🌊</div>
+            <h3>影视飓风动势</h3>
+            <p>深色沉浸 + 几何光影，让每一次浏览都充满冲击力</p>
+        </div>
+        <div class="card">
+            <div class="card-icon">📁</div>
+            <h3>后台文件库</h3>
+            <p>上传任意文件，自动生成链接，随时随地分享</p>
+        </div>
+    </div>
+
+    <!-- 后台管理区域 -->
+    <div id="admin" class="admin-panel">
+        <div class="admin-header">
+            <div class="admin-title">📎 后台文件中心</div>
+            <small style="color: var(--text-gray);">支持图片、文档、压缩包等任意格式</small>
+        </div>
+
+        <!-- GitHub Token 配置区（只存储在浏览器中） -->
+        <div style="margin-bottom: 20px;">
+            <input type="password" id="githubToken" class="token-input" placeholder="🔑 GitHub Token (需要 repo 权限)" value="">
+            <div style="font-size: 12px; margin-top: 6px;">
+                <span>📌 如何获取？</span>
+                <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--ding-blue);">👉 创建Token</a> 
+                <span> → 勾选 `repo` → 生成后粘贴</span>
+            </div>
+            <div style="margin-top: 8px;">
+                <input type="text" id="repoName" class="token-input" placeholder="仓库地址: yizhijumaogzs/yizhijumaogzs.github.io" value="yizhijumaogzs/yizhijumaogzs.github.io">
+            </div>
+        </div>
+
+        <div class="upload-area" id="dropzone">
+            <div>🐣 点击或拖拽文件至此区域上传</div>
+            <label class="upload-label" for="fileInput">📤 选择文件</label>
+            <input type="file" id="fileInput" multiple>
+            <div style="font-size: 13px; margin-top: 16px;">文件将保存至仓库 /uploads/ 文件夹，并通过 GitHub Pages 直接访问</div>
+        </div>
+
+        <div id="fileListContainer">
+            <h3 style="margin-bottom: 12px;">📂 已上传的文件</h3>
+            <div id="fileList" class="file-list">
+                <div style="color: var(--text-gray);">加载中...</div>
+            </div>
+        </div>
+        <button id="refreshBtn" class="primary" style="margin-top: 16px;">🔄 刷新文件列表</button>
+    </div>
+</main>
+
+<footer>
+    <p>✨ 灵感源自钉钉 · 影视飓风 | 文件保存在 GitHub 仓库 | 你的数据你做主</p>
+</footer>
+
+<div id="toast" class="toast">✨ 提示信息</div>
+
+<script>
+    // ---------- 主题切换 ----------
+    const themeToggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    themeToggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        if (current === 'dark') {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+
+    // 魔法棒点击彩蛋
+    const magicBtn = document.getElementById('magicBtn');
+    magicBtn.addEventListener('click', () => {
+        showToast('🪄 AI魔法：简洁高效，紫定能行！');
+    });
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+    }
+
+    // ---------- GitHub 上传核心 ----------
+    let githubToken = localStorage.getItem('gh_token') || '';
+    let repoWithOwner = localStorage.getItem('gh_repo') || 'yizhijumaogzs/yizhijumaogzs.github.io';
+    const tokenInput = document.getElementById('githubToken');
+    const repoInput = document.getElementById('repoName');
+    tokenInput.value = githubToken;
+    repoInput.value = repoWithOwner;
+
+    tokenInput.addEventListener('input', (e) => {
+        githubToken = e.target.value;
+        localStorage.setItem('gh_token', githubToken);
+    });
+    repoInput.addEventListener('input', (e) => {
+        repoWithOwner = e.target.value;
+        localStorage.setItem('gh_repo', repoWithOwner);
+    });
+
+    // 上传至 GitHub API (放到仓库 /uploads 下)
+    async function uploadToGitHub(file) {
+        if (!githubToken) {
+            showToast('❌ 请先填写 GitHub Token');
+            throw new Error('no token');
+        }
+        if (!repoWithOwner) {
+            showToast('❌ 请填写仓库名');
+            throw new Error('no repo');
+        }
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onload = async () => {
+                const base64Content = reader.result.split(',')[1];
+                const path = `uploads/${Date.now()}_${file.name}`;
+                const url = `https://api.github.com/repos/${repoWithOwner}/contents/${path}`;
+                try {
+                    const res = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${githubToken}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        },
+                        body: JSON.stringify({
+                            message: `上传文件 ${file.name}`,
+                            content: base64Content,
+                            branch: 'main'
+                        })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.message);
+                    }
+                    const data = await res.json();
+                    const rawUrl = `https://raw.githubusercontent.com/${repoWithOwner}/main/${path}`;
+                    const pagesUrl = `https://${repoWithOwner.split('/')[0]}.github.io/${path}`;
+                    showToast(`✅ ${file.name} 上传成功`);
+                    resolve({ rawUrl, pagesUrl, name: file.name });
+                } catch (err) {
+                    showToast(`❌ 上传失败: ${err.message}`);
+                    reject(err);
+                }
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // 获取文件列表 (通过 GitHub API)
+    async function fetchFileList() {
+        if (!githubToken || !repoWithOwner) return [];
+        try {
+            const res = await fetch(`https://api.github.com/repos/${repoWithOwner}/contents/uploads`, {
+                headers: { 'Authorization': `token ${githubToken}` }
+            });
+            if (!res.ok) return [];
+            const files = await res.json();
+            if (!Array.isArray(files)) return [];
+            return files.map(f => ({
+                name: f.name,
+                download_url: f.download_url,
+                html_url: `https://${repoWithOwner.split('/')[0]}.github.io/uploads/${f.name}`
+            }));
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function renderFileList(files) {
+        const container = document.getElementById('fileList');
+        if (!files.length) {
+            container.innerHTML = '<div style="color: var(--text-gray);">暂无文件，上传一个试试～</div>';
+            return;
+        }
+        container.innerHTML = files.map(file => `
+            <div class="file-item">
+                <span>📄 ${file.name}</span>
+                <div>
+                    <a href="${file.html_url}" target="_blank" class="file-link">🔗 访问</a>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+        const files = await fetchFileList();
+        renderFileList(files);
+    });
+
+    // 处理上传
+    const fileInput = document.getElementById('fileInput');
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        for (const file of files) {
+            await uploadToGitHub(file);
+        }
+        await refreshList();
+        fileInput.value = '';
+    });
+
+    async function refreshList() {
+        const files = await fetchFileList();
+        renderFileList(files);
+    }
+
+    // 拖拽上传
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#a05eff'; });
+    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'var(--ding-purple)'; });
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--ding-purple)';
+        const files = Array.from(e.dataTransfer.files);
+        for (const file of files) await uploadToGitHub(file);
+        await refreshList();
+    });
+
+    (async function init() {
+        if (githubToken) await refreshList();
+    })();
+</script>
 </body>
 </html>
