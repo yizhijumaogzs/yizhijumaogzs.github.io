@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 · 灵感工坊</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f5f7fb;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 48px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+        }
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: #07C160;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            margin: 0 auto 20px;
+        }
+        button {
+            background: #e53e3e;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            margin-top: 30px;
+            cursor: pointer;
+        }
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .back-link a {
+            color: #07C160;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="avatar" id="avatar"></div>
+        <h2 id="username"></h2>
+        <p style="color: #7e8c9e; margin-top: 8px;">欢迎回来 👋</p>
+        <button onclick="logout()">退出登录</button>
+    </div>
+    <div class="back-link">
+        <a href="index.html">← 返回首页</a>
+    </div>
+</div>
+
+<script>
+    const user = localStorage.getItem('currentUser');
+    if (!user) {
+        window.location.href = 'login.html';
+    }
+    const userData = JSON.parse(user);
+    document.getElementById('username').innerText = userData.username;
+    document.getElementById('avatar').innerText = userData.username.charAt(0).toUpperCase();
+
+    function logout() {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>
