@@ -11,7 +11,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             padding: 24px 20px;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; }
         .header {
             background: rgba(255,255,255,0.8);
             backdrop-filter: blur(20px);
@@ -30,6 +30,14 @@
             border-radius: 40px;
             color: white;
             font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-red {
+            background: #e53e3e;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            color: white;
             cursor: pointer;
         }
         .card {
@@ -55,6 +63,41 @@
             border-radius: 24px;
             border: 1px solid #dce3e9;
             background: white;
+        }
+        /* 文件上传区 */
+        .upload-area {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .upload-area.drag-over {
+            border-color: #07C160;
+            background: #e8f5e9;
+        }
+        .file-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .file-link {
+            color: #07C160;
+            text-decoration: none;
+            font-size: 0.8rem;
+            word-break: break-all;
         }
         .material-item {
             background: #f8fafc;
@@ -92,93 +135,322 @@
             border-radius: 60px;
             opacity: 0;
             transition: 0.2s;
+            z-index: 1000;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #07C160;
+            transition: width 0.3s;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .tab-btn.active {
+            background: #07C160;
+            color: white;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h2>👑 管理员后台 · 素材管理</h2>
+        <h2>👑 管理员后台 · 文件与素材管理</h2>
         <div>
             <button class="logout-btn" onclick="logout()">退出登录</button>
         </div>
     </div>
 
-    <div class="card">
-        <h3>➕ 添加新素材</h3>
-        <div class="form-grid">
-            <div class="field"><label>标题</label><input type="text" id="title" placeholder="鱼-05 4K"></div>
-            <div class="field"><label>分类</label><select id="category"><option value="video">视频素材</option><option value="3d">3D资产</option><option value="template">模板工程</option><option value="audio">音频音效</option><option value="preset">预设LUT</option><option value="doc">文档合同</option></select></div>
-            <div class="field full-width"><label>描述</label><textarea id="desc" rows="2" placeholder="素材简介..."></textarea></div>
-            <div class="field"><label>预览图标</label><input type="text" id="icon" value="🎬"></div>
-            <div class="field"><label>质量</label><select id="quality"><option value="hd">HD</option><option value="4k">4K</option><option value="8k">8K</option></select></div>
-            <div class="field"><label>价格类型</label><select id="priceType"><option value="free">免费</option><option value="pro">Pro专享</option></select></div>
-            <div class="field"><label>文件大小</label><input type="text" id="size" placeholder="2.3GB"></div>
-            <div class="field"><label>热度(整数)</label><input type="number" id="hot" value="100"></div>
-            <div class="field full-width"><label>官方链接</label><input type="url" id="officialUrl" placeholder="https://www.ysjf.com/material/xxx"></div>
-        </div>
-        <button id="addBtn" style="margin-top: 20px; background:#07C160; border:none; padding:10px 24px; border-radius:40px; color:white;">+ 添加</button>
+    <!-- 标签页切换 -->
+    <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="upload">📤 文件上传</button>
+        <button class="tab-btn" data-tab="materials">📋 素材管理</button>
     </div>
 
-    <div class="card">
-        <h3>📋 当前素材列表</h3>
-        <div id="listContainer">加载中...</div>
-        <button id="saveAllBtn" class="btn-green" style="margin-top: 20px;">💾 保存到 GitHub</button>
+    <!-- 文件上传面板 -->
+    <div id="uploadPanel" class="card">
+        <h3>📁 上传文件到仓库</h3>
+        <p style="color: #7e8c9e; font-size: 0.8rem; margin-bottom: 16px;">支持任意格式：软件安装包(.exe/.dmg)、3D模型(.blend/.obj)、视频(.mp4)、图片、文档等</p>
+        
+        <!-- GitHub 配置 -->
+        <div style="background: #f0f2f5; border-radius: 20px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <input type="password" id="githubToken" placeholder="GitHub Token (需要 repo 权限)" style="flex:2;">
+                <input type="text" id="repoName" placeholder="仓库名: 用户名/仓库名" style="flex:2;" value="yizhijumaogzs/yizhijumaogzs.github.io">
+                <button id="saveTokenBtn" class="btn-green" style="padding: 10px 20px;">保存配置</button>
+            </div>
+            <div style="font-size: 0.7rem; color: #8a99b0; margin-top: 8px;">
+                🔑 获取Token: <a href="https://github.com/settings/tokens" target="_blank" style="color: #07C160;">github.com/settings/tokens</a> → 勾选 repo
+            </div>
+        </div>
+
+        <!-- 拖拽上传区 -->
+        <div id="dropzone" class="upload-area">
+            <div style="font-size: 3rem; margin-bottom: 8px;">📤</div>
+            <div>拖拽文件到此处上传</div>
+            <div style="margin: 12px 0;">或</div>
+            <label class="btn-green" style="display: inline-block; padding: 10px 24px; cursor: pointer;">选择文件</label>
+            <input type="file" id="fileInput" multiple style="display: none;">
+            <div id="uploadProgress" class="progress-bar" style="display: none;">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- 已上传文件列表 -->
+        <h3 style="margin: 20px 0 12px;">📂 已上传的文件</h3>
+        <div id="fileListContainer" class="file-list">
+            <div style="color: #8a99b0; text-align: center; padding: 20px;">配置 Token 后点击刷新</div>
+        </div>
+        <button id="refreshFilesBtn" class="btn-green" style="margin-top: 12px;">🔄 刷新文件列表</button>
+    </div>
+
+    <!-- 素材管理面板 -->
+    <div id="materialsPanel" class="card" style="display: none;">
+        <h3>➕ 添加/编辑素材信息</h3>
+        <div class="form-grid">
+            <div class="field"><label>标题</label><input type="text" id="title" placeholder="鱼-05 4K"></div>
+            <div class="field"><label>分类</label><select id="category">
+                <option value="video">视频素材</option><option value="3d">3D资产</option>
+                <option value="template">模板工程</option><option value="audio">音频音效</option>
+                <option value="preset">预设LUT</option><option value="software">软件工具</option>
+            </select></div>
+            <div class="field full-width"><label>描述</label><textarea id="desc" rows="2" placeholder="素材简介..."></textarea></div>
+            <div class="field"><label>图标(emoji)</label><input type="text" id="icon" value="🎬"></div>
+            <div class="field"><label>质量/类型</label><input type="text" id="quality" placeholder="4K / 免费"></div>
+            <div class="field"><label>文件大小</label><input type="text" id="size" placeholder="2.3GB"></div>
+            <div class="field"><label>热度(整数)</label><input type="number" id="hot" value="100"></div>
+            <div class="field full-width"><label>下载链接</label><input type="url" id="officialUrl" placeholder="https://... 或 /uploads/xxx.zip"></div>
+        </div>
+        <button id="addMaterialBtn" class="btn-green">+ 添加素材</button>
+
+        <h3 style="margin: 30px 0 12px;">📋 当前素材列表</h3>
+        <div id="materialListContainer"></div>
+        <button id="saveMaterialsBtn" class="btn-green" style="margin-top: 20px;">💾 保存素材数据到 GitHub</button>
     </div>
 </div>
 <div id="toast" class="toast"></div>
 
 <script>
-    // ========== 权限验证：只有管理员可以访问 ==========
+    // ========== 权限验证 ==========
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (!currentUser.isAdmin) {
         alert('您没有权限访问管理员页面');
         window.location.href = 'index.html';
     }
 
-    let materials = [];
+    // ========== 全局变量 ==========
     let githubToken = localStorage.getItem('gh_token') || '';
     let repoWithOwner = localStorage.getItem('gh_repo') || 'yizhijumaogzs/yizhijumaogzs.github.io';
+    let materials = [];
 
-    if (!githubToken) {
-        const token = prompt("🔐 需要 GitHub Token（repo权限）\n获取地址: https://github.com/settings/tokens");
-        if (token) { githubToken = token; localStorage.setItem('gh_token', githubToken); }
-        const repo = prompt("仓库名（格式: 用户名/仓库名）", "yizhijumaogzs/yizhijumaogzs.github.io");
-        if (repo) { repoWithOwner = repo; localStorage.setItem('gh_repo', repoWithOwner); }
-    }
+    // ========== 标签页切换 ==========
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const isUpload = btn.dataset.tab === 'upload';
+            document.getElementById('uploadPanel').style.display = isUpload ? 'block' : 'none';
+            document.getElementById('materialsPanel').style.display = isUpload ? 'none' : 'block';
+            if (!isUpload) loadMaterials();
+        });
+    });
 
-    function showToast(msg) {
+    // ========== Toast 提示 ==========
+    function showToast(msg, isError = false) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
+        toast.style.background = isError ? '#e53e3e' : '#1e293b';
         toast.style.opacity = '1';
-        setTimeout(() => toast.style.opacity = '0', 2500);
+        setTimeout(() => toast.style.opacity = '0', 3000);
     }
 
+    // ========== 保存 GitHub 配置 ==========
+    document.getElementById('saveTokenBtn').addEventListener('click', () => {
+        githubToken = document.getElementById('githubToken').value;
+        repoWithOwner = document.getElementById('repoName').value;
+        localStorage.setItem('gh_token', githubToken);
+        localStorage.setItem('gh_repo', repoWithOwner);
+        showToast('✅ 配置已保存');
+        loadFileList();
+    });
+
+    // 恢复已保存的配置
+    document.getElementById('githubToken').value = githubToken;
+    document.getElementById('repoName').value = repoWithOwner;
+
+    // ========== 文件上传功能 ==========
+    async function uploadFile(file) {
+        if (!githubToken) { showToast('请先配置 GitHub Token', true); return false; }
+        
+        const reader = new FileReader();
+        return new Promise((resolve) => {
+            reader.onload = async () => {
+                const base64Content = reader.result.split(',')[1];
+                // 保持原文件名，避免重名时加时间戳
+                const timestamp = Date.now();
+                const path = `uploads/${timestamp}_${file.name}`;
+                const url = `https://api.github.com/repos/${repoWithOwner}/contents/${path}`;
+                
+                try {
+                    const res = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${githubToken}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        },
+                        body: JSON.stringify({
+                            message: `上传文件: ${file.name}`,
+                            content: base64Content,
+                            branch: 'main'
+                        })
+                    });
+                    if (!res.ok) throw new Error('上传失败');
+                    
+                    const data = await res.json();
+                    const username = repoWithOwner.split('/')[0];
+                    const downloadUrl = `https://${username}.github.io/${path}`;
+                    
+                    showToast(`✅ ${file.name} 上传成功`);
+                    resolve({ success: true, url: downloadUrl, name: file.name, path: path });
+                } catch(err) {
+                    showToast(`❌ 上传失败: ${err.message}`, true);
+                    resolve({ success: false });
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // 处理多文件上传
+    async function handleFiles(files) {
+        const progressBar = document.getElementById('uploadProgress');
+        const progressFill = progressBar.querySelector('.progress-fill');
+        progressBar.style.display = 'block';
+        
+        let completed = 0;
+        for (const file of files) {
+            const result = await uploadFile(file);
+            if (result.success) {
+                // 自动填充到素材表单
+                document.getElementById('title').value = file.name.replace(/\.[^/.]+$/, '');
+                document.getElementById('officialUrl').value = result.url;
+                document.getElementById('size').value = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                showToast(`💡 已自动填入表单，可继续编辑素材信息`);
+            }
+            completed++;
+            progressFill.style.width = (completed / files.length * 100) + '%';
+        }
+        setTimeout(() => { progressBar.style.display = 'none'; progressFill.style.width = '0%'; }, 1000);
+        loadFileList();
+    }
+
+    // 加载文件列表
+    async function loadFileList() {
+        if (!githubToken) {
+            document.getElementById('fileListContainer').innerHTML = '<div style="color: #8a99b0; text-align: center; padding: 20px;">请先配置 GitHub Token</div>';
+            return;
+        }
+        try {
+            const res = await fetch(`https://api.github.com/repos/${repoWithOwner}/contents/uploads`, {
+                headers: { 'Authorization': `token ${githubToken}` }
+            });
+            if (!res.ok) throw new Error();
+            const files = await res.json();
+            if (!Array.isArray(files) || files.length === 0) {
+                document.getElementById('fileListContainer').innerHTML = '<div style="color: #8a99b0; text-align: center; padding: 20px;">暂无文件</div>';
+                return;
+            }
+            const username = repoWithOwner.split('/')[0];
+            document.getElementById('fileListContainer').innerHTML = files.map(f => `
+                <div class="file-item">
+                    <span>📄 ${f.name}</span>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <a href="https://${username}.github.io/uploads/${f.name}" target="_blank" class="file-link">🔗 复制链接</a>
+                        <button class="copy-btn" data-url="https://${username}.github.io/uploads/${f.name}" style="background:#eef2f5; border:none; padding:4px 12px; border-radius:20px; cursor:pointer;">📋 复制</button>
+                    </div>
+                </div>
+            `).join('');
+            // 绑定复制按钮
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(btn.dataset.url);
+                    showToast('✅ 链接已复制');
+                });
+            });
+        } catch(e) {
+            document.getElementById('fileListContainer').innerHTML = '<div style="color: #8a99b0; text-align: center; padding: 20px;">加载失败，请检查 Token 和仓库名</div>';
+        }
+    }
+
+    // 拖拽上传
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        const files = Array.from(e.dataTransfer.files);
+        await handleFiles(files);
+    });
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        await handleFiles(Array.from(e.target.files));
+        e.target.value = '';
+    });
+    document.getElementById('refreshFilesBtn').addEventListener('click', loadFileList);
+
+    // ========== 素材管理功能 ==========
     async function loadMaterials() {
         try {
             const url = `https://api.github.com/repos/${repoWithOwner}/contents/materials.json`;
             const res = await fetch(url, { headers: githubToken ? { 'Authorization': `token ${githubToken}` } : {} });
-            if (res.status === 404) { materials = []; renderList(); return; }
+            if (res.status === 404) { materials = []; renderMaterialList(); return; }
             const data = await res.json();
             materials = JSON.parse(atob(data.content));
-            renderList();
-        } catch(e) { materials = []; renderList(); }
+            renderMaterialList();
+        } catch(e) { materials = []; renderMaterialList(); }
     }
 
-    function renderList() {
-        const container = document.getElementById('listContainer');
-        if (!materials.length) { container.innerHTML = '<div>暂无素材，请添加</div>'; return; }
+    function renderMaterialList() {
+        const container = document.getElementById('materialListContainer');
+        if (!materials.length) {
+            container.innerHTML = '<div style="color: #8a99b0; text-align: center; padding: 20px;">暂无素材，请添加</div>';
+            return;
+        }
         container.innerHTML = materials.map((m, idx) => `
             <div class="material-item">
                 <div><strong>${m.icon} ${m.title}</strong><br><small>${m.category} · ${m.size} · 🔥${m.hot}</small></div>
                 <div class="actions">
-                    <button class="edit-btn" data-idx="${idx}">✏️ 编辑</button>
-                    <button class="del-btn" data-idx="${idx}">🗑️ 删除</button>
+                    <button class="edit-material" data-idx="${idx}">✏️ 编辑</button>
+                    <button class="del-material" data-idx="${idx}">🗑️ 删除</button>
                 </div>
             </div>
         `).join('');
-        document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => editMaterial(parseInt(btn.dataset.idx))));
-        document.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', (e) => { materials.splice(parseInt(btn.dataset.idx),1); renderList(); }));
+        document.querySelectorAll('.edit-material').forEach(btn => btn.addEventListener('click', () => editMaterial(parseInt(btn.dataset.idx))));
+        document.querySelectorAll('.del-material').forEach(btn => btn.addEventListener('click', () => { materials.splice(parseInt(btn.dataset.idx),1); renderMaterialList(); }));
     }
 
     function editMaterial(idx) {
@@ -188,16 +460,15 @@
         document.getElementById('desc').value = m.desc;
         document.getElementById('icon').value = m.icon;
         document.getElementById('quality').value = m.quality;
-        document.getElementById('priceType').value = m.priceType;
         document.getElementById('size').value = m.size;
         document.getElementById('hot').value = m.hot;
         document.getElementById('officialUrl').value = m.officialUrl;
         materials.splice(idx,1);
-        renderList();
-        showToast('已载入编辑区，修改后点击“添加”');
+        renderMaterialList();
+        showToast('已载入编辑区，修改后点击“添加素材”');
     }
 
-    document.getElementById('addBtn').addEventListener('click', () => {
+    document.getElementById('addMaterialBtn').addEventListener('click', () => {
         const newItem = {
             id: Date.now(),
             title: document.getElementById('title').value,
@@ -205,22 +476,23 @@
             desc: document.getElementById('desc').value,
             icon: document.getElementById('icon').value,
             quality: document.getElementById('quality').value,
-            priceType: document.getElementById('priceType').value,
             size: document.getElementById('size').value,
             hot: parseInt(document.getElementById('hot').value) || 0,
             officialUrl: document.getElementById('officialUrl').value,
             date: new Date().toISOString().slice(0,10)
         };
-        if (!newItem.title || !newItem.officialUrl) { showToast('标题和官网链接不能为空'); return; }
+        if (!newItem.title || !newItem.officialUrl) { showToast('标题和下载链接不能为空', true); return; }
         materials.push(newItem);
-        renderList();
+        renderMaterialList();
         document.getElementById('title').value = '';
         document.getElementById('desc').value = '';
         document.getElementById('officialUrl').value = '';
-        showToast('已添加，记得保存');
+        document.getElementById('size').value = '';
+        showToast('已添加素材，记得点击“保存素材数据”');
     });
 
-    async function saveToGitHub() {
+    async function saveMaterials() {
+        if (!githubToken) { showToast('请先配置 GitHub Token', true); return; }
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(materials, null, 2))));
         const url = `https://api.github.com/repos/${repoWithOwner}/contents/materials.json`;
         let sha = null;
@@ -233,17 +505,20 @@
             headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
             body: JSON.stringify({ message: 'Update materials', content, sha, branch: 'main' })
         });
-        if (res.ok) showToast('✅ 保存成功，前台将同步素材库');
-        else showToast('❌ 保存失败，检查Token');
+        if (res.ok) showToast('✅ 素材数据已保存');
+        else showToast('❌ 保存失败', true);
     }
 
-    document.getElementById('saveAllBtn').addEventListener('click', saveToGitHub);
-    loadMaterials();
+    document.getElementById('saveMaterialsBtn').addEventListener('click', saveMaterials);
 
+    // ========== 退出登录 ==========
     function logout() {
         localStorage.removeItem('currentUser');
         window.location.href = 'index.html';
     }
+
+    // 初始加载文件列表
+    if (githubToken) loadFileList();
 </script>
 </body>
 </html>
