@@ -111,6 +111,24 @@
 </div>
 
 <script>
+    // ========== 管理员预设账号 ==========
+    const ADMIN_USERNAME = "一只橘猫工作室";
+    const ADMIN_PASSWORD = "aaaa";
+
+    // 初始化：如果还没有管理员账号，自动注册到系统
+    function initAdminAccount() {
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+        const adminExists = users.find(u => u.username === ADMIN_USERNAME);
+        if (!adminExists) {
+            users.push({
+                username: ADMIN_USERNAME,
+                password: ADMIN_PASSWORD,
+                isAdmin: true
+            });
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+    }
+
     // 切换登录/注册
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -127,9 +145,20 @@
         const password = document.getElementById('loginPassword').value;
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         const user = users.find(u => u.username === username && u.password === password);
+        
         if (user) {
-            localStorage.setItem('currentUser', JSON.stringify({ username: user.username }));
-            window.location.href = 'index.html';
+            // 保存当前登录用户信息
+            localStorage.setItem('currentUser', JSON.stringify({
+                username: user.username,
+                isAdmin: user.isAdmin || false
+            }));
+            
+            // 判断跳转：管理员跳 admin.html，普通用户跳 index.html
+            if (user.isAdmin === true || (username === ADMIN_USERNAME && password === ADMIN_PASSWORD)) {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'index.html';
+            }
         } else {
             document.getElementById('loginError').innerText = '用户名或密码错误';
         }
@@ -139,24 +168,49 @@
         const username = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value;
         const confirm = document.getElementById('regConfirm').value;
+        
         if (!username || !password) {
             document.getElementById('regError').innerText = '请填写完整';
             return;
         }
+        
+        // 禁止注册管理员账号
+        if (username === ADMIN_USERNAME) {
+            document.getElementById('regError').innerText = '该用户名不可注册';
+            return;
+        }
+        
         if (password !== confirm) {
             document.getElementById('regError').innerText = '两次密码不一致';
             return;
         }
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
         if (users.find(u => u.username === username)) {
             document.getElementById('regError').innerText = '用户名已存在';
             return;
         }
-        users.push({ username, password });
+        
+        // 普通用户注册（isAdmin: false）
+        users.push({
+            username: username,
+            password: password,
+            isAdmin: false
+        });
         localStorage.setItem('users', JSON.stringify(users));
-        localStorage.setItem('currentUser', JSON.stringify({ username }));
+        
+        // 注册后自动登录
+        localStorage.setItem('currentUser', JSON.stringify({
+            username: username,
+            isAdmin: false
+        }));
+        
+        // 跳转到普通用户首页
         window.location.href = 'index.html';
     }
+
+    // 初始化管理员账号
+    initAdminAccount();
 </script>
 </body>
 </html>
