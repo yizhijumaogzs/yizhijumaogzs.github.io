@@ -194,4 +194,56 @@
         document.getElementById('officialUrl').value = m.officialUrl;
         materials.splice(idx,1);
         renderList();
-        showToast('已载入编辑区
+        showToast('已载入编辑区，修改后点击“添加”');
+    }
+
+    document.getElementById('addBtn').addEventListener('click', () => {
+        const newItem = {
+            id: Date.now(),
+            title: document.getElementById('title').value,
+            category: document.getElementById('category').value,
+            desc: document.getElementById('desc').value,
+            icon: document.getElementById('icon').value,
+            quality: document.getElementById('quality').value,
+            priceType: document.getElementById('priceType').value,
+            size: document.getElementById('size').value,
+            hot: parseInt(document.getElementById('hot').value) || 0,
+            officialUrl: document.getElementById('officialUrl').value,
+            date: new Date().toISOString().slice(0,10)
+        };
+        if (!newItem.title || !newItem.officialUrl) { showToast('标题和官网链接不能为空'); return; }
+        materials.push(newItem);
+        renderList();
+        document.getElementById('title').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('officialUrl').value = '';
+        showToast('已添加，记得保存');
+    });
+
+    async function saveToGitHub() {
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(materials, null, 2))));
+        const url = `https://api.github.com/repos/${repoWithOwner}/contents/materials.json`;
+        let sha = null;
+        try {
+            const get = await fetch(url, { headers: { 'Authorization': `token ${githubToken}` } });
+            if (get.ok) sha = (await get.json()).sha;
+        } catch(e) {}
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
+            body: JSON.stringify({ message: 'Update materials', content, sha, branch: 'main' })
+        });
+        if (res.ok) showToast('✅ 保存成功，前台将同步素材库');
+        else showToast('❌ 保存失败，检查Token');
+    }
+
+    document.getElementById('saveAllBtn').addEventListener('click', saveToGitHub);
+    loadMaterials();
+
+    function logout() {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>
