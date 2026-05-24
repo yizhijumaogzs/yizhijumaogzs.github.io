@@ -3,27 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>灵感素材库 · 影视级资源分享</title>
+    <title>灵感工坊 · 软件与创意资源</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: #f5f7fb;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: #1a2c3e;
         }
 
-        /* 顶部毛玻璃导航 */
+        /* 毛玻璃导航 */
         .navbar {
             position: sticky;
             top: 0;
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
             border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
             padding: 12px 28px;
             z-index: 100;
@@ -46,12 +41,13 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -0.5px;
         }
 
         .nav-links {
             display: flex;
-            gap: 28px;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-links a {
@@ -62,243 +58,93 @@
             transition: 0.2s;
         }
 
-        .nav-links a:hover {
-            color: #07C160;
-        }
+        .nav-links a:hover { color: #07C160; }
 
-        /* 搜索栏 */
-        .search-section {
-            max-width: 1400px;
-            margin: 32px auto 24px;
-            padding: 0 28px;
-        }
-
-        .search-bar {
-            display: flex;
-            gap: 12px;
-            background: white;
-            border-radius: 60px;
-            padding: 6px 6px 6px 24px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-            border: 0.5px solid #e2e8f0;
-        }
-
-        .search-bar input {
-            flex: 1;
-            border: none;
-            outline: none;
-            font-size: 1rem;
-            background: transparent;
-            padding: 14px 0;
-        }
-
-        .search-bar button {
+        .user-avatar {
+            width: 36px;
+            height: 36px;
             background: #07C160;
-            border: none;
-            border-radius: 50px;
-            padding: 0 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .search-bar button:hover {
-            background: #059e4a;
+        /* 英雄区 */
+        .hero {
+            background: linear-gradient(135deg, #e8f5e9 0%, #d4e8d4 100%);
+            padding: 60px 28px;
+            text-align: center;
         }
 
-        /* 分类标签栏 */
-        .categories {
+        .hero h1 {
+            font-size: 2.8rem;
+            margin-bottom: 16px;
+        }
+
+        .hero p {
+            color: #4a5b6e;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 分区标题 */
+        .section-title {
             max-width: 1400px;
-            margin: 24px auto 0;
+            margin: 48px auto 24px;
             padding: 0 28px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            border-bottom: 1px solid #e9edf2;
-            padding-bottom: 16px;
-        }
-
-        .cat-btn {
-            background: none;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #5e6f8d;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .cat-btn.active {
-            background: #07C160;
-            color: white;
-        }
-
-        /* 筛选栏 */
-        .filter-bar {
-            max-width: 1400px;
-            margin: 20px auto 0;
-            padding: 0 28px;
+            font-size: 1.6rem;
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
         }
 
-        .filter-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .filter-chip {
-            background: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            color: #2c3e4e;
-            cursor: pointer;
-            border: 0.5px solid #dce3e9;
-            transition: 0.2s;
-        }
-
-        .filter-chip.active {
-            background: #eef5e9;
-            border-color: #07C160;
-            color: #07C160;
-        }
-
-        .sort-btn {
-            background: white;
-            border: 0.5px solid #dce3e9;
-            padding: 6px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
-
-        /* 素材网格 */
+        /* 软件卡片网格 */
         .grid {
             max-width: 1400px;
-            margin: 28px auto;
+            margin: 0 auto;
             padding: 0 28px;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 24px;
         }
 
-        /* iOS 26 风格卡片 */
         .card {
             background: white;
             border-radius: 28px;
-            overflow: hidden;
+            padding: 20px;
+            transition: all 0.3s;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-            transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-            border: 0.5px solid rgba(0, 0, 0, 0.04);
+            border: 0.5px solid #e9edf2;
         }
 
         .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12);
         }
 
-        .card-preview {
-            height: 180px;
-            background: linear-gradient(135deg, #e0e8f0 0%, #cbd5e1 100%);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-        }
-
-        .card-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            color: white;
-        }
-
-        .card-content {
-            padding: 18px;
-        }
-
-        .card-title {
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 6px;
-        }
-
-        .card-desc {
-            font-size: 0.75rem;
-            color: #7e8c9e;
-            margin-bottom: 14px;
-            line-height: 1.4;
-        }
-
-        .card-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.7rem;
-            color: #8a99b0;
-            margin-bottom: 16px;
-        }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .card-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .card h3 { font-size: 1.1rem; margin-bottom: 6px; }
+        .card-desc { font-size: 0.75rem; color: #7e8c9e; margin-bottom: 16px; line-height: 1.4; }
+        .card-meta { display: flex; justify-content: space-between; align-items: center; }
         .tag {
-            background: #f0f3f8;
+            background: #eef2f5;
             padding: 4px 12px;
             border-radius: 30px;
             font-size: 0.65rem;
-            font-weight: 500;
         }
-
-        .download-link {
+        .download-btn {
             background: #07C160;
-            border: none;
             border-radius: 40px;
-            padding: 8px 20px;
+            padding: 8px 18px;
             color: white;
-            font-weight: 600;
             font-size: 0.75rem;
+            font-weight: 600;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
-        }
-
-        .download-link:hover {
-            background: #059e4a;
-        }
-
-        /* 加载更多 */
-        .load-more {
-            text-align: center;
-            margin: 32px auto 48px;
-        }
-
-        .load-more button {
-            background: white;
-            border: 1px solid #dce3e9;
-            padding: 12px 32px;
-            border-radius: 40px;
-            font-weight: 500;
-            cursor: pointer;
         }
 
         footer {
@@ -307,14 +153,14 @@
             color: #8a99b0;
             font-size: 0.75rem;
             border-top: 0.5px solid #e2e8f0;
-            margin-top: 20px;
+            margin-top: 48px;
         }
 
         @media (max-width: 680px) {
             .navbar { padding: 12px 16px; }
-            .nav-links { gap: 16px; }
-            .search-section, .categories, .filter-bar, .grid { padding: 0 16px; }
-            .grid { gap: 16px; }
+            .hero h1 { font-size: 1.8rem; }
+            .section-title { font-size: 1.3rem; }
+            .grid { padding: 0 16px; gap: 16px; }
         }
     </style>
 </head>
@@ -322,215 +168,111 @@
 
 <nav class="navbar">
     <div class="nav-inner">
-        <div class="logo">🎬 灵感素材库</div>
+        <div class="logo">🎨 灵感工坊</div>
         <div class="nav-links">
-            <a href="#">首页</a>
-            <a href="#">素材库</a>
-            <a href="#">学习</a>
-            <a href="#">关于</a>
+            <a href="index.html">首页</a>
+            <a href="material.html">素材库</a>
+            <a href="privacy.html">隐私政策</a>
+            <div id="userSection">
+                <a href="login.html" id="loginLink">登录/注册</a>
+            </div>
         </div>
     </div>
 </nav>
 
-<div class="search-section">
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="搜索你想要的素材... 例如：4K 自然 音效">
-        <button id="searchBtn">🔍 搜索</button>
-    </div>
+<section class="hero">
+    <h1>✨ 设计与创意资源集合</h1>
+    <p>精选官方软件下载 · 影视级素材库 · 开源创作工具</p>
+</section>
+
+<div class="section-title">
+    <span>📦 热门软件 · 官方下载</span>
+    <span style="font-size: 0.8rem;">点击即跳转官网</span>
 </div>
 
-<div class="categories" id="categoryTabs">
-    <!-- 动态加载分类 -->
+<div class="grid" id="softwareGrid"></div>
+
+<div class="section-title">
+    <span>🎬 推荐素材 · 本周热门</span>
+    <a href="material.html" style="font-size: 0.8rem; color: #07C160;">查看全部 →</a>
 </div>
 
-<div class="filter-bar">
-    <div class="filter-group" id="filterGroup">
-        <span class="filter-chip active" data-filter="all">全部</span>
-        <span class="filter-chip" data-filter="4k">4K+</span>
-        <span class="filter-chip" data-filter="free">免费</span>
-        <span class="filter-chip" data-filter="pro">专业版</span>
-    </div>
-    <div>
-        <span class="sort-btn" id="sortDate">📅 最近更新 ↓</span>
-        <span class="sort-btn" id="sortHot">🔥 热度最高</span>
-    </div>
-</div>
-
-<div class="grid" id="materialGrid">
-    <!-- 卡片动态渲染 -->
-</div>
-
-<div class="load-more" id="loadMoreBtn">
-    <button>加载更多素材 ∨</button>
-</div>
+<div class="grid" id="materialGrid"></div>
 
 <footer>
-    <p>© 2026 灵感素材库 · 部分素材来源于影视飓风等开源分享 | 点击跳转官方获取</p>
+    <p>© 2026 灵感工坊 · 所有下载均跳转至官方网站，安全可靠</p>
+    <p style="margin-top: 8px;"><a href="privacy.html" style="color: #07C160;">隐私政策</a> | 数据仅存储于本地浏览器</p>
 </footer>
 
 <script>
-    // ----------------------------- 真实素材库数据（影视飓风风格 + 大量条目） -----------------------------
-    const allMaterials = [
-        { id: 1, title: "鱼-05 4K", desc: "水下鱼类特写，高动态范围，适合纪录片", category: "video", quality: "4k", priceType: "free", previewIcon: "🐟", size: "2.3GB", duration: "00:32", hot: 342, date: "2026-05-20", officialUrl: "https://www.ysjf.com/material/1" },
-        { id: 2, title: "自然景观-02 4K", desc: "山巅云海延时摄影，电影感调色", category: "video", quality: "4k", priceType: "free", previewIcon: "🏔️", size: "3.1GB", duration: "00:45", hot: 287, date: "2026-05-19", officialUrl: "https://www.ysjf.com/material/2" },
-        { id: 3, title: "黑水摄影-动物特写", desc: "深海奇异生物，超广角微距", category: "video", quality: "4k", priceType: "pro", previewIcon: "🦑", size: "4.2GB", duration: "01:12", hot: 512, date: "2026-05-18", officialUrl: "https://www.ysjf.com/material/3" },
-        { id: 4, title: "猫的语｜AI生成梦境", desc: "超现实风格，AI辅助创作短片", category: "video", quality: "hd", priceType: "free", previewIcon: "🐱", size: "890MB", duration: "00:28", hot: 1210, date: "2026-05-17", officialUrl: "https://www.ysjf.com/material/4" },
-        { id: 5, title: "梦境生成Skill", desc: "ComfyUI工作流 + 模型", category: "template", quality: "hd", priceType: "free", previewIcon: "🧠", size: "1.8GB", hot: 670, date: "2026-05-16", officialUrl: "https://www.ysjf.com/material/5" },
-        { id: 6, title: "4D高斯·云冈石窟", desc: "高斯泼溅重建，沉浸式VR体验", category: "3d", quality: "8k", priceType: "pro", previewIcon: "🏛️", size: "6.7GB", hot: 430, date: "2026-05-15", officialUrl: "https://www.ysjf.com/material/6" },
-        { id: 7, title: "香港霓虹灯CG", desc: "赛博朋克城市资产，Blender源文件", category: "3d", quality: "4k", priceType: "pro", previewIcon: "🌃", size: "3.9GB", hot: 865, date: "2026-05-14", officialUrl: "https://www.ysjf.com/material/7" },
-        { id: 8, title: "空间视频：香港霓虹灯", desc: "Vision Pro空间视频样片", category: "video", quality: "8k", priceType: "free", previewIcon: "🥽", size: "1.2GB", duration: "00:18", hot: 2100, date: "2026-05-13", officialUrl: "https://www.ysjf.com/material/8" },
-        { id: 9, title: "TV制作协议模板", desc: "影视行业PPM文档+合同范本", category: "doc", quality: "doc", priceType: "free", previewIcon: "📄", size: "2.1MB", hot: 398, date: "2026-05-12", officialUrl: "https://www.ysjf.com/material/9" },
-        { id: 10, title: "自然景观-01 4K", desc: "森林溪流4K航拍，调色LUT预设", category: "video", quality: "4k", priceType: "free", previewIcon: "🌲", size: "2.8GB", duration: "00:50", hot: 612, date: "2026-05-11", officialUrl: "https://www.ysjf.com/material/10" },
-        { id: 11, title: "黑水摄影动物广角正史", desc: "稀有的深海生物记录影像", category: "video", quality: "4k", priceType: "pro", previewIcon: "🐙", size: "5.4GB", duration: "01:25", hot: 330, date: "2026-05-10", officialUrl: "https://www.ysjf.com/material/11" },
-        { id: 12, title: "Immersive样片：猫的语", desc: "空间音频+3D景深沉浸样片", category: "video", quality: "8k", priceType: "free", previewIcon: "🎧", size: "3.3GB", duration: "00:34", hot: 821, date: "2026-05-09", officialUrl: "https://www.ysjf.com/material/12" },
-        { id: 13, title: "闪电分镜模板", desc: "分镜脚本+动态故事板工具包", category: "template", quality: "hd", priceType: "free", previewIcon: "⚡", size: "124MB", hot: 495, date: "2026-05-08", officialUrl: "https://www.ysjf.com/material/13" },
-        { id: 14, title: "环境音效包-城市", desc: "街道、地铁、人群氛围音", category: "audio", quality: "audio", priceType: "free", previewIcon: "🏙️", size: "856MB", hot: 374, date: "2026-05-07", officialUrl: "https://www.ysjf.com/material/14" },
-        { id: 15, title: "电影感LUTs合集", desc: "适配达芬奇/PR的30种风格LUT", category: "preset", quality: "lut", priceType: "pro", previewIcon: "🎨", size: "18MB", hot: 1100, date: "2026-05-06", officialUrl: "https://www.ysjf.com/material/15" },
-        { id: 16, title: "飓风相机-用户作品集", desc: "用户拍摄的高质量短片合辑", category: "video", quality: "4k", priceType: "free", previewIcon: "📷", size: "7.2GB", duration: "04:20", hot: 2034, date: "2026-05-05", officialUrl: "https://www.ysjf.com/material/16" }
+    // ---------- 软件数据（官方下载链接）----------
+    const softwares = [
+        { name: "Visual Studio Code", desc: "轻量级代码编辑器，插件丰富", icon: "💻", officialUrl: "https://code.visualstudio.com/Download" },
+        { name: "DaVinci Resolve", desc: "专业调色剪辑，免费版功能强大", icon: "🎬", officialUrl: "https://www.blackmagicdesign.com/products/davinciresolve" },
+        { name: "OBS Studio", desc: "开源直播录制软件", icon: "📹", officialUrl: "https://obsproject.com/download" },
+        { name: "Blender", desc: "开源3D创作套件", icon: "🌀", officialUrl: "https://www.blender.org/download/" },
+        { name: "GIMP", desc: "免费图像编辑，PS替代", icon: "🖌️", officialUrl: "https://www.gimp.org/downloads/" },
+        { name: "7-Zip", desc: "高压缩率解压工具", icon: "🗜️", officialUrl: "https://www.7-zip.org/download.html" },
+        { name: "Figma", desc: "在线UI设计协作工具", icon: "🎨", officialUrl: "https://www.figma.com/downloads/" },
+        { name: "Audacity", desc: "开源音频编辑软件", icon: "🎧", officialUrl: "https://www.audacityteam.org/download/" }
     ];
 
-    // 分类动态提取
-    const categoryMap = {
-        "video": "视频素材",
-        "3d": "3D资产",
-        "template": "模板工程",
-        "audio": "音频音效",
-        "preset": "预设LUT",
-        "doc": "文档合同"
-    };
+    // 素材数据（影视飓风风格）
+    const materials = [
+        { title: "鱼-05 4K", desc: "水下鱼类特写，高动态", icon: "🐟", category: "视频", officialUrl: "https://www.ysjf.com/material/1" },
+        { title: "自然景观-02 4K", desc: "山巅云海延时", icon: "🏔️", category: "视频", officialUrl: "https://www.ysjf.com/material/2" },
+        { title: "黑水摄影特写", desc: "深海奇异生物", icon: "🦑", category: "视频", officialUrl: "https://www.ysjf.com/material/3" },
+        { title: "4D高斯·云冈石窟", desc: "高斯泼溅重建", icon: "🏛️", category: "3D", officialUrl: "https://www.ysjf.com/material/6" },
+        { title: "梦境生成Skill", desc: "AI工作流模型", icon: "🧠", category: "AI工具", officialUrl: "https://www.ysjf.com/material/5" },
+        { title: "环境音效包-城市", desc: "街道人群氛围", icon: "🏙️", category: "音效", officialUrl: "https://www.ysjf.com/material/14" }
+    ];
 
-    let currentCategory = "all";
-    let currentFilter = "all";
-    let currentSort = "date";   // date / hot
-    let currentSearch = "";
-    let visibleCount = 12;       // 初始显示12个，点击加载更多增加
-
-    // 渲染分类tab
-    function renderCategories() {
-        const container = document.getElementById("categoryTabs");
-        let html = `<button class="cat-btn active" data-cat="all">全部</button>`;
-        const cats = [...new Set(allMaterials.map(m => m.category))];
-        cats.forEach(cat => {
-            html += `<button class="cat-btn" data-cat="${cat}">${categoryMap[cat] || cat}</button>`;
-        });
-        container.innerHTML = html;
-        // 绑定事件
-        document.querySelectorAll(".cat-btn").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                currentCategory = btn.dataset.cat;
-                visibleCount = 12;
-                renderMaterials();
-            });
-        });
-    }
-
-    // 筛选逻辑
-    function getFilteredAndSearched() {
-        let filtered = [...allMaterials];
-        if (currentCategory !== "all") {
-            filtered = filtered.filter(m => m.category === currentCategory);
-        }
-        if (currentFilter !== "all") {
-            if (currentFilter === "4k") filtered = filtered.filter(m => m.quality === "4k" || m.quality === "8k");
-            if (currentFilter === "free") filtered = filtered.filter(m => m.priceType === "free");
-            if (currentFilter === "pro") filtered = filtered.filter(m => m.priceType === "pro");
-        }
-        if (currentSearch.trim() !== "") {
-            const kw = currentSearch.toLowerCase();
-            filtered = filtered.filter(m => m.title.toLowerCase().includes(kw) || m.desc.toLowerCase().includes(kw));
-        }
-        // 排序
-        if (currentSort === "date") {
-            filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
-        } else if (currentSort === "hot") {
-            filtered.sort((a,b) => b.hot - a.hot);
-        }
-        return filtered;
-    }
-
-    function renderMaterials() {
-        let filtered = getFilteredAndSearched();
-        const showItems = filtered.slice(0, visibleCount);
-        const grid = document.getElementById("materialGrid");
-        if (showItems.length === 0) {
-            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px;">没有找到相关素材，换个关键词试试～</div>`;
-            document.getElementById("loadMoreBtn").style.display = "none";
-            return;
-        }
-        grid.innerHTML = showItems.map(m => `
+    function renderSoftware() {
+        const grid = document.getElementById("softwareGrid");
+        grid.innerHTML = softwares.map(s => `
             <div class="card">
-                <div class="card-preview">
-                    <span>${m.previewIcon}</span>
-                    <span class="card-badge">${m.quality === "8k" ? "8K" : (m.quality === "4k" ? "4K" : "HD")}</span>
-                </div>
-                <div class="card-content">
-                    <div class="card-title">${m.title}</div>
-                    <div class="card-desc">${m.desc}</div>
-                    <div class="card-meta">
-                        <span>📦 ${m.size}</span>
-                        <span>🔥 ${m.hot}</span>
-                    </div>
-                    <div class="card-footer">
-                        <span class="tag">${m.priceType === "free" ? "免费" : "Pro专享"}</span>
-                        <a href="${m.officialUrl}" target="_blank" class="download-link">获取 →</a>
-                    </div>
+                <div class="card-icon">${s.icon}</div>
+                <h3>${s.name}</h3>
+                <div class="card-desc">${s.desc}</div>
+                <div class="card-meta">
+                    <span class="tag">官方正版</span>
+                    <a href="${s.officialUrl}" target="_blank" class="download-btn">官网下载 →</a>
                 </div>
             </div>
         `).join("");
-        // 控制加载更多按钮显示
-        const loadBtnDiv = document.getElementById("loadMoreBtn");
-        if (visibleCount >= filtered.length) {
-            loadBtnDiv.style.display = "none";
+    }
+
+    function renderMaterials() {
+        const grid = document.getElementById("materialGrid");
+        grid.innerHTML = materials.slice(0, 6).map(m => `
+            <div class="card">
+                <div class="card-icon">${m.icon}</div>
+                <h3>${m.title}</h3>
+                <div class="card-desc">${m.desc}</div>
+                <div class="card-meta">
+                    <span class="tag">${m.category}</span>
+                    <a href="${m.officialUrl}" target="_blank" class="download-btn">获取 →</a>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    // 检查登录状态，显示用户头像
+    function checkLoginStatus() {
+        const user = localStorage.getItem("currentUser");
+        const userSection = document.getElementById("userSection");
+        if (user) {
+            const userName = JSON.parse(user).username || "用户";
+            const initial = userName.charAt(0).toUpperCase();
+            userSection.innerHTML = `<div class="user-avatar" onclick="location.href='profile.html'">${initial}</div>`;
         } else {
-            loadBtnDiv.style.display = "block";
+            userSection.innerHTML = `<a href="login.html" id="loginLink">登录/注册</a>`;
         }
     }
 
-    // 加载更多
-    document.getElementById("loadMoreBtn").querySelector("button").addEventListener("click", () => {
-        visibleCount += 12;
-        renderMaterials();
-    });
-
-    // 筛选器事件
-    document.querySelectorAll(".filter-chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-            document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
-            chip.classList.add("active");
-            currentFilter = chip.dataset.filter;
-            visibleCount = 12;
-            renderMaterials();
-        });
-    });
-
-    document.getElementById("sortDate").addEventListener("click", () => {
-        currentSort = "date";
-        visibleCount = 12;
-        renderMaterials();
-    });
-    document.getElementById("sortHot").addEventListener("click", () => {
-        currentSort = "hot";
-        visibleCount = 12;
-        renderMaterials();
-    });
-
-    document.getElementById("searchBtn").addEventListener("click", () => {
-        currentSearch = document.getElementById("searchInput").value;
-        visibleCount = 12;
-        renderMaterials();
-    });
-    document.getElementById("searchInput").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            currentSearch = e.target.value;
-            visibleCount = 12;
-            renderMaterials();
-        }
-    });
-
-    renderCategories();
+    renderSoftware();
     renderMaterials();
+    checkLoginStatus();
 </script>
 </body>
 </html>
