@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员后台 · 灵感工坊</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 24px 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-green {
+            background: #07C160;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .full-width { grid-column: span 2; }
+        label { font-weight: 500; font-size: 0.8rem; color: #2c3e4e; }
+        input, select, textarea {
+            padding: 10px 14px;
+            border-radius: 24px;
+            border: 1px solid #dce3e9;
+            background: white;
+        }
+        .material-item {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .actions button {
+            background: none;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .logout-btn {
+            background: #e53e3e;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 60px;
+            opacity: 0;
+            transition: 0.2s;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>👑 管理员后台 · 素材管理</h2>
+        <div>
+            <button class="logout-btn" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>➕ 添加新素材</h3>
+        <div class="form-grid">
+            <div class="field"><label>标题</label><input type="text" id="title" placeholder="鱼-05 4K"></div>
+            <div class="field"><label>分类</label><select id="category"><option value="video">视频素材</option><option value="3d">3D资产</option><option value="template">模板工程</option><option value="audio">音频音效</option><option value="preset">预设LUT</option><option value="doc">文档合同</option></select></div>
+            <div class="field full-width"><label>描述</label><textarea id="desc" rows="2" placeholder="素材简介..."></textarea></div>
+            <div class="field"><label>预览图标</label><input type="text" id="icon" value="🎬"></div>
+            <div class="field"><label>质量</label><select id="quality"><option value="hd">HD</option><option value="4k">4K</option><option value="8k">8K</option></select></div>
+            <div class="field"><label>价格类型</label><select id="priceType"><option value="free">免费</option><option value="pro">Pro专享</option></select></div>
+            <div class="field"><label>文件大小</label><input type="text" id="size" placeholder="2.3GB"></div>
+            <div class="field"><label>热度(整数)</label><input type="number" id="hot" value="100"></div>
+            <div class="field full-width"><label>官方链接</label><input type="url" id="officialUrl" placeholder="https://www.ysjf.com/material/xxx"></div>
+        </div>
+        <button id="addBtn" style="margin-top: 20px; background:#07C160; border:none; padding:10px 24px; border-radius:40px; color:white;">+ 添加</button>
+    </div>
+
+    <div class="card">
+        <h3>📋 当前素材列表</h3>
+        <div id="listContainer">加载中...</div>
+        <button id="saveAllBtn" class="btn-green" style="margin-top: 20px;">💾 保存到 GitHub</button>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+    // ========== 权限验证：只有管理员可以访问 ==========
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (!currentUser.isAdmin) {
+        alert('您没有权限访问管理员页面');
+        window.location.href = 'index.html';
+    }
+
+    let materials = [];
+    let githubToken = localStorage.getItem('gh_token') || '';
+    let repoWithOwner = localStorage.getItem('gh_repo') || 'yizhijumaogzs/yizhijumaogzs.github.io';
+
+    if (!githubToken) {
+        const token = prompt("🔐 需要 GitHub Token（repo权限）\n获取地址: https://github.com/settings/tokens");
+        if (token) { githubToken = token; localStorage.setItem('gh_token', githubToken); }
+        const repo = prompt("仓库名（格式: 用户名/仓库名）", "yizhijumaogzs/yizhijumaogzs.github.io");
+        if (repo) { repoWithOwner = repo; localStorage.setItem('gh_repo', repoWithOwner); }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', 2500);
+    }
+
+    async function loadMaterials() {
+        try {
+            const url = `https://api.github.com/repos/${repoWithOwner}/contents/materials.json`;
+            const res = await fetch(url, { headers: githubToken ? { 'Authorization': `token ${githubToken}` } : {} });
+            if (res.status === 404) { materials = []; renderList(); return; }
+            const data = await res.json();
+            materials = JSON.parse(atob(data.content));
+            renderList();
+        } catch(e) { materials = []; renderList(); }
+    }
+
+    function renderList() {
+        const container = document.getElementById('listContainer');
+        if (!materials.length) { container.innerHTML = '<div>暂无素材，请添加</div>'; return; }
+        container.innerHTML = materials.map((m, idx) => `
+            <div class="material-item">
+                <div><strong>${m.icon} ${m.title}</strong><br><small>${m.category} · ${m.size} · 🔥${m.hot}</small></div>
+                <div class="actions">
+                    <button class="edit-btn" data-idx="${idx}">✏️ 编辑</button>
+                    <button class="del-btn" data-idx="${idx}">🗑️ 删除</button>
+                </div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => editMaterial(parseInt(btn.dataset.idx))));
+        document.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', (e) => { materials.splice(parseInt(btn.dataset.idx),1); renderList(); }));
+    }
+
+    function editMaterial(idx) {
+        const m = materials[idx];
+        document.getElementById('title').value = m.title;
+        document.getElementById('category').value = m.category;
+        document.getElementById('desc').value = m.desc;
+        document.getElementById('icon').value = m.icon;
+        document.getElementById('quality').value = m.quality;
+        document.getElementById('priceType').value = m.priceType;
+        document.getElementById('size').value = m.size;
+        document.getElementById('hot').value = m.hot;
+        document.getElementById('officialUrl').value = m.officialUrl;
+        materials.splice(idx,1);
+        renderList();
+        showToast('已载入编辑区
