@@ -13,7 +13,6 @@
             color: #1a2c3e;
         }
 
-        /* 毛玻璃导航 */
         .navbar {
             position: sticky;
             top: 0;
@@ -73,7 +72,6 @@
             cursor: pointer;
         }
 
-        /* 英雄区 */
         .hero {
             background: linear-gradient(135deg, #e8f5e9 0%, #d4e8d4 100%);
             padding: 60px 28px;
@@ -91,7 +89,6 @@
             margin: 0 auto;
         }
 
-        /* 分区标题 */
         .section-title {
             max-width: 1400px;
             margin: 48px auto 24px;
@@ -103,7 +100,6 @@
             align-items: center;
         }
 
-        /* 软件卡片网格 */
         .grid {
             max-width: 1400px;
             margin: 0 auto;
@@ -217,7 +213,7 @@
         { name: "Audacity", desc: "开源音频编辑软件", icon: "🎧", officialUrl: "https://www.audacityteam.org/download/" }
     ];
 
-    // 素材数据（影视飓风风格）
+    // 素材数据
     const materials = [
         { title: "鱼-05 4K", desc: "水下鱼类特写，高动态", icon: "🐟", category: "视频", officialUrl: "https://www.ysjf.com/material/1" },
         { title: "自然景观-02 4K", desc: "山巅云海延时", icon: "🏔️", category: "视频", officialUrl: "https://www.ysjf.com/material/2" },
@@ -257,12 +253,13 @@
         `).join("");
     }
 
-    // 检查登录状态，显示用户头像
+    // 检查登录状态，显示用户头像或登录链接
     function checkLoginStatus() {
         const user = localStorage.getItem("currentUser");
         const userSection = document.getElementById("userSection");
         if (user) {
-            const userName = JSON.parse(user).username || "用户";
+            const userData = JSON.parse(user);
+            const userName = userData.username || "用户";
             const initial = userName.charAt(0).toUpperCase();
             userSection.innerHTML = `<div class="user-avatar" onclick="location.href='profile.html'">${initial}</div>`;
         } else {
