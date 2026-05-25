@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析 · 管理员后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 24px 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #07C160;
+        }
+        .stat-label {
+            color: #7e8c9e;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card h3 {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+        .delete-btn {
+            background: #fee2e2;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: #dc2626;
+            cursor: pointer;
+        }
+        .badge {
+            background: #07C160;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .refresh-btn {
+            background: #07C160;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+        }
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .tab {
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .tab.active {
+            background: #07C160;
+            color: white;
+        }
+        .logout-btn {
+            background: #e53e3e;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 60px;
+            opacity: 0;
+            transition: 0.2s;
+            z-index: 1000;
+        }
+        @media (max-width: 768px) {
+            th, td { font-size: 0.7rem; padding: 8px 4px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>📊 数据分析后台</h2>
+        <div>
+            <button class="refresh-btn" onclick="loadAllData()">🔄 刷新</button>
+            <button class="logout-btn" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-number" id="totalVisits">-</div><div class="stat-label">总访问量</div></div>
+        <div class="stat-card"><div class="stat-number" id="todayVisits">-</div><div class="stat-label">今日访问</div></div>
+        <div class="stat-card"><div class="stat-number" id="weekVisits">-</div><div class="stat-label">近7日访问</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalUsers">-</div><div class="stat-label">注册用户</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalLogins">-</div><div class="stat-label">登录记录</div></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="visits">📋 访问记录</button>
+        <button class="tab" data-tab="logins">🔐 登录记录</button>
+        <button class="tab" data-tab="users">👥 用户管理</button>
+    </div>
+
+    <div id="visitsPanel" class="card">
+        <h3>📊 页面访问记录 <span style="font-size:0.7rem;">(最近50条)</span></h3>
+        <div id="visitsTable">加载中...</div>
+    </div>
+
+    <div id="loginsPanel" class="card" style="display:none;">
+        <h3>🔐 用户登录记录 <span style="font-size:0.7rem;">(最近50条)</span></h3>
+        <div id="loginsTable">加载中...</div>
+    </div>
+
+    <div id="usersPanel" class="card" style="display:none;">
+        <h3>👥 注册用户列表 <button class="refresh-btn" style="margin-left:12px; padding:4px 12px;" onclick="loadUsers()">刷新</button></h3>
+        <div id="usersTable">加载中...</div>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+    // 权限验证
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (!currentUser.isAdmin) {
+        alert('请先登录管理员账号');
+        window.location.href = 'login.html';
+    }
+
+    let token = localStorage.getItem('gh_token');
+    if (!token) {
+        token = prompt('需要 GitHub Token 才能查看数据\n获取: https://github.com/settings/tokens\n勾选 repo\n\n粘贴 Token:');
+        if (token) localStorage.setItem('gh_token', token);
+        else window.location.href = 'admin.html';
+    }
+
+    const REPO = 'yizhijumaogzs/yizhijumaogzs.github.io';
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', 2500);
+    }
+
+    // 加载访问统计
+    async function loadVisitStats() {
+        try {
+            const res = await fetch(`https://api.github.com/repos/${REPO}/contents/data/visits.json`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const logs = JSON.parse(atob(data.content));
+            
+            const today = new Date().toISOString().slice(0,10);
+            const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+            
+            const todayCount = logs.filter(l => l.timestamp?.startsWith(today)).length;
+            const weekCount = logs.filter(l => new Date(l.timestamp) >= weekAgo).length;
+            
+            document.getElementById('totalVisits').innerText = logs.length;
+            document.getElementById('todayVisits').innerText = todayCount;
+            document.getElementById('weekVisits').innerText = weekCount;
+            
+            // 渲染表格
+            let html = '<table><tr><th>时间</th><th>页面</th><th>用户</th><th>IP</th><th>地点</th><th>浏览器</th><th>系统</th></tr>';
+            logs.slice(0, 50).forEach(l => {
+                html += `<tr>
+                    <td>${new Date(l.timestamp).toLocaleString()}</td>
+                    <td>${l.page || '-'}</td>
+                    <td>${l.userId || '-'}</td>
+                    <td>${l.ip || '-'}</td>
+                    <td>${l.location || '-'}</td>
+                    <td>${l.browser || '-'}</td>
+                    <td>${l.os || '-'}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            document.getElementById('visitsTable').innerHTML = html || '<div>暂无数据</div>';
+        } catch(e) {
+            document.getElementById('visitsTable').innerHTML = '<div>暂无数据</div>';
+        }
+    }
+
+    // 加载登录记录
+    async function loadLoginLogs() {
+        try {
+            const res = await fetch(`https://api.github.com/repos/${REPO}/contents/data/login_logs.json`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const logs = JSON.parse(atob(data.content));
+            
+            document.getElementById('totalLogins').innerText = logs.length;
+            
+            let html = '<table><tr><th>时间</th><th>用户名</th><th>IP</th><th>地点</th><th>浏览器</th><th>系统</th></tr>';
+            logs.slice(0, 50).forEach(l => {
+                html += `<tr>
+                    <td>${new Date(l.timestamp).toLocaleString()}</td>
+                    <td>${l.username || '-'}</td>
+                    <td>${l.ip || '-'}</td>
+                    <td>${l.location || '-'}</td>
+                    <td>${l.browser || '-'}</td>
+                    <td>${l.os || '-'}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            document.getElementById('loginsTable').innerHTML = html;
+        } catch(e) {
+            document.getElementById('loginsTable').innerHTML = '<div>暂无数据</div>';
+        }
+    }
+
+    // 加载用户列表
+    async function loadUsers() {
+        try {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            document.getElementById('totalUsers').innerText = users.length;
+            
+            let html = '<table><tr><th>用户名</th><th>角色</th><th>注册时间</th><th>操作</th></tr>';
+            users.forEach((u, idx) => {
+                html += `<tr>
+                    <td>${u.username}</td>
+                    <td>${u.isAdmin ? '<span class="badge">管理员</span>' : '普通用户'}</td>
+                    <td>${u.registerTime || '未知'}</td>
+                    <td>${!u.isAdmin ? `<button class="delete-btn" onclick="deleteUser('${u.username}')">删除</button>` : '-'}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            document.getElementById('usersTable').innerHTML = html;
+        } catch(e) {
+            document.getElementById('usersTable').innerHTML = '<div>暂无用户</div>';
+        }
+    }
+
+    // 删除用户
+    function deleteUser(username) {
+        if (confirm(`确定要删除用户 "${username}" 吗？`)) {
+            let users = JSON.parse(localStorage.getItem('users') || '[]');
+            users = users.filter(u => u.username !== username);
+            localStorage.setItem('users', JSON.stringify(users));
+            showToast(`✅ 已删除用户: ${username}`);
+            loadUsers();
+            loadUserCount();
+        }
+    }
+
+    async function loadUserCount() {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        document.getElementById('totalUsers').innerText = users.length;
+    }
+
+    async function loadAllData() {
+        await loadVisitStats();
+        await loadLoginLogs();
+        await loadUsers();
+    }
+
+    // 标签页切换
+    document.querySelectorAll('.tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const tab = btn.dataset.tab;
+            document.getElementById('visitsPanel').style.display = tab === 'visits' ? 'block' : 'none';
+            document.getElementById('loginsPanel').style.display = tab === 'logins' ? 'block' : 'none';
+            document.getElementById('usersPanel').style.display = tab === 'users' ? 'block' : 'none';
+            if (tab === 'users') loadUsers();
+        });
+    });
+
+    function logout() {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    }
+
+    loadAllData();
+</script>
+</body>
+</html>
