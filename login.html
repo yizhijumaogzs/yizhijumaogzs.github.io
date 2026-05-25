@@ -115,6 +115,17 @@
     const ADMIN_USERNAME = "一只橘猫工作室";
     const ADMIN_PASSWORD = "aaaa";
 
+    // 获取 GitHub Token（用于保存登录日志）
+    let githubToken = localStorage.getItem('gh_token');
+    if (!githubToken) {
+        // 如果还没有 Token，提示用户输入（管理员需要配置）
+        const token = prompt('🔐 首次使用，请输入 GitHub Token（用于记录登录日志）\n获取地址: https://github.com/settings/tokens\n勾选 repo 权限即可\n\n如果不填，登录记录将不会被保存');
+        if (token) {
+            githubToken = token;
+            localStorage.setItem('gh_token', githubToken);
+        }
+    }
+
     // 初始化：如果还没有管理员账号，自动注册到系统
     function initAdminAccount() {
         let users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -123,9 +134,153 @@
             users.push({
                 username: ADMIN_USERNAME,
                 password: ADMIN_PASSWORD,
-                isAdmin: true
+                isAdmin: true,
+                registerTime: new Date().toISOString()
             });
             localStorage.setItem('users', JSON.stringify(users));
+        }
+    }
+
+    // ========== 获取客户端信息 ==========
+    async function getClientInfo() {
+        try {
+            // 获取 IP 和地理位置
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
+            
+            // 获取浏览器信息
+            const ua = navigator.userAgent;
+            let browser = '未知';
+            let os = '未知';
+            
+            if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+            else if (ua.includes('Firefox')) browser = 'Firefox';
+            else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+            else if (ua.includes('Edg')) browser = 'Edge';
+            else if (ua.includes('MSIE') || ua.includes('Trident')) browser = 'IE';
+            
+            if (ua.includes('Windows')) os = 'Windows';
+            else if (ua.includes('Mac')) os = 'macOS';
+            else if (ua.includes('Linux')) os = 'Linux';
+            else if (ua.includes('Android')) os = 'Android';
+            else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+            
+            return {
+                ip: ipData.ip || '未知',
+                location: `${ipData.city || ''} ${ipData.region || ''} ${ipData.country_name || ''}`.trim() || '未知',
+                browser: browser,
+                os: os,
+                userAgent: ua.substring(0, 200)
+            };
+        } catch(e) {
+            return {
+                ip: '未知',
+                location: '未知',
+                browser: '未知',
+                os: '未知',
+                userAgent: navigator.userAgent.substring(0, 200)
+            };
+        }
+    }
+
+    // ========== 记录登录日志到 GitHub ==========
+    async function recordLoginLog(username, isAdmin) {
+        if (!githubToken) return;
+        
+        try {
+            const clientInfo = await getClientInfo();
+            const logRecord = {
+                id: Date.now(),
+                username: username,
+                isAdmin: isAdmin,
+                timestamp: new Date().toISOString(),
+                ip: clientInfo.ip,
+                location: clientInfo.location,
+                browser: clientInfo.browser,
+                os: clientInfo.os,
+                userAgent: clientInfo.userAgent
+            };
+            
+            // 读取现有登录日志
+            let logs = [];
+            try {
+                const res = await fetch(`https://api.github.com/repos/yizhijumaogzs/yizhijumaogzs.github.io/contents/data/login_logs.json`, {
+                    headers: { 'Authorization': `token ${githubToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    logs = JSON.parse(atob(data.content));
+                }
+            } catch(e) {}
+            
+            logs.unshift(logRecord);
+            if (logs.length > 500) logs = logs.slice(0, 500);
+            
+            // 保存
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(logs, null, 2))));
+            const url = `https://api.github.com/repos/yizhijumaogzs/yizhijumaogzs.github.io/contents/data/login_logs.json`;
+            let sha = null;
+            try {
+                const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}` } });
+                if (getRes.ok) sha = (await getRes.json()).sha;
+            } catch(e) {}
+            
+            await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ message: `登录记录: ${username}`, content, sha, branch: 'main' })
+            });
+        } catch(e) {
+            console.error('记录登录日志失败:', e);
+        }
+    }
+
+    // ========== 记录访问日志 ==========
+    async function recordVisitLog(page, username = 'anonymous') {
+        if (!githubToken) return;
+        
+        try {
+            const clientInfo = await getClientInfo();
+            const visitRecord = {
+                id: Date.now(),
+                page: page,
+                userId: username,
+                timestamp: new Date().toISOString(),
+                ip: clientInfo.ip,
+                location: clientInfo.location,
+                browser: clientInfo.browser,
+                os: clientInfo.os
+            };
+            
+            let logs = [];
+            try {
+                const res = await fetch(`https://api.github.com/repos/yizhijumaogzs/yizhijumaogzs.github.io/contents/data/visits.json`, {
+                    headers: { 'Authorization': `token ${githubToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    logs = JSON.parse(atob(data.content));
+                }
+            } catch(e) {}
+            
+            logs.unshift(visitRecord);
+            if (logs.length > 500) logs = logs.slice(0, 500);
+            
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(logs, null, 2))));
+            const url = `https://api.github.com/repos/yizhijumaogzs/yizhijumaogzs.github.io/contents/data/visits.json`;
+            let sha = null;
+            try {
+                const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}` } });
+                if (getRes.ok) sha = (await getRes.json()).sha;
+            } catch(e) {}
+            
+            await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ message: `访问记录: ${page}`, content, sha, branch: 'main' })
+            });
+        } catch(e) {
+            console.error('记录访问失败:', e);
         }
     }
 
@@ -140,21 +295,25 @@
         });
     });
 
-    function doLogin() {
+    // ========== 登录函数 ==========
+    async function doLogin() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value;
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         const user = users.find(u => u.username === username && u.password === password);
         
         if (user) {
-            // 保存当前登录用户信息
+            // 记录登录日志
+            await recordLoginLog(username, user.isAdmin || false);
+            
+            // 保存当前登录用户
             localStorage.setItem('currentUser', JSON.stringify({
                 username: user.username,
                 isAdmin: user.isAdmin || false
             }));
             
-            // 判断跳转：管理员跳 admin.html，普通用户跳 index.html
-            if (user.isAdmin === true || (username === ADMIN_USERNAME && password === ADMIN_PASSWORD)) {
+            // 跳转
+            if (user.isAdmin === true) {
                 window.location.href = 'admin.html';
             } else {
                 window.location.href = 'index.html';
@@ -164,7 +323,8 @@
         }
     }
 
-    function doRegister() {
+    // ========== 注册函数 ==========
+    async function doRegister() {
         const username = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value;
         const confirm = document.getElementById('regConfirm').value;
@@ -174,7 +334,6 @@
             return;
         }
         
-        // 禁止注册管理员账号
         if (username === ADMIN_USERNAME) {
             document.getElementById('regError').innerText = '该用户名不可注册';
             return;
@@ -191,12 +350,14 @@
             return;
         }
         
-        // 普通用户注册（isAdmin: false）
-        users.push({
+        // 新用户注册
+        const newUser = {
             username: username,
             password: password,
-            isAdmin: false
-        });
+            isAdmin: false,
+            registerTime: new Date().toISOString()
+        };
+        users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
         
         // 注册后自动登录
@@ -205,9 +366,15 @@
             isAdmin: false
         }));
         
-        // 跳转到普通用户首页
+        // 记录登录日志（注册后自动登录）
+        await recordLoginLog(username, false);
+        
+        // 跳转首页
         window.location.href = 'index.html';
     }
+
+    // 记录页面访问（登录页面本身）
+    recordVisitLog('login.html');
 
     // 初始化管理员账号
     initAdminAccount();
