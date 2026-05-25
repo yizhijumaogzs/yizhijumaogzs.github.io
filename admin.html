@@ -22,9 +22,19 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            gap: 12px;
         }
         .btn-green {
             background: #07C160;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-blue {
+            background: #3b82f6;
             border: none;
             padding: 10px 24px;
             border-radius: 40px;
@@ -65,6 +75,7 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            gap: 12px;
         }
         .actions button {
             background: none;
@@ -73,6 +84,8 @@
             border-radius: 30px;
             cursor: pointer;
         }
+        .edit-btn { background: #eef2ff; color: #2563eb; }
+        .del-btn { background: #fee2e2; color: #dc2626; }
         .logout-btn {
             background: #e53e3e;
             color: white;
@@ -100,9 +113,25 @@
             padding: 16px;
             margin-bottom: 20px;
             border-left: 4px solid #07C160;
+            font-size: 0.85rem;
         }
         .info-box a {
             color: #07C160;
+        }
+        code {
+            background: #eef2f5;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        hr {
+            margin: 20px 0;
+            border: 0.5px solid #e2e8f0;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -110,44 +139,85 @@
 <div class="container">
     <div class="header">
         <h2>👑 管理员后台 · 素材管理</h2>
-        <div>
+        <div class="button-group">
+            <button class="btn-blue" onclick="location.href='analytics.html'">📊 数据分析</button>
             <button class="logout-btn" onclick="logout()">退出登录</button>
         </div>
     </div>
 
-    <!-- 提示信息 -->
+    <!-- 使用说明 -->
     <div class="info-box">
-        📁 <strong>如何上传文件？</strong><br>
-        1. 在 GitHub 仓库的 <code>uploads</code> 文件夹手动上传文件：<br>
-        👉 <a href="https://github.com/yizhijumaogzs/yizhijumaogzs.github.io/tree/main/uploads" target="_blank">点击这里打开 uploads 文件夹</a><br>
-        2. 上传后，复制文件链接，粘贴到下面的「下载链接」输入框<br>
-        3. 链接格式：<code>https://yizhijumaogzs.github.io/uploads/你的文件名</code>
+        📁 <strong>如何添加下载资源？</strong><br>
+        <br>
+        <strong>方法一：上传文件到 GitHub（推荐）</strong><br>
+        1. 打开 <a href="https://github.com/yizhijumaogzs/yizhijumaogzs.github.io/tree/main/uploads" target="_blank">uploads 文件夹</a><br>
+        2. 点击「添加文件」→「上传文件」→ 选择你的文件 → 提交<br>
+        3. 复制链接：<code>https://yizhijumaogzs.github.io/uploads/你的文件名</code><br>
+        <br>
+        <strong>方法二：使用外部链接</strong><br>
+        直接粘贴任何已有的下载链接（百度网盘、蓝奏云、官方下载链接等）<br>
+        <hr>
+        💡 <strong>链接格式示例：</strong><br>
+        • GitHub上传：<code>https://yizhijumaogzs.github.io/uploads/blender.zip</code><br>
+        • 外部链接：<code>https://pan.baidu.com/s/xxxxx</code>
     </div>
 
+    <!-- 添加素材表单 -->
     <div class="card">
-        <h3>➕ 添加/编辑素材</h3>
-        <div class="form-grid">
-            <div class="field"><label>标题 *</label><input type="text" id="title" placeholder="例：Blender 4.0"></div>
-            <div class="field"><label>分类</label><select id="category">
-                <option value="software">软件工具</option>
-                <option value="video">视频素材</option>
-                <option value="3d">3D资产</option>
-                <option value="audio">音频音效</option>
-                <option value="other">其他</option>
-            </select></div>
-            <div class="field full-width"><label>描述</label><textarea id="desc" rows="2" placeholder="素材简介..."></textarea></div>
-            <div class="field"><label>图标(emoji)</label><input type="text" id="icon" value="📦"></div>
-            <div class="field"><label>文件大小</label><input type="text" id="size" placeholder="2.3GB"></div>
-            <div class="field"><label>热度</label><input type="number" id="hot" value="100"></div>
-            <div class="field full-width"><label>🔗 下载链接 *</label><input type="url" id="officialUrl" placeholder="https://yizhijumaogzs.github.io/uploads/你的文件名"></div>
+        <h3>➕ 添加新素材</h3>
+        
+        <div class="field">
+            <label>📝 标题 *</label>
+            <input type="text" id="title" placeholder="例：Blender 4.0 中文版">
         </div>
-        <button id="addMaterialBtn" class="btn-green">+ 添加素材</button>
+        
+        <div class="form-grid">
+            <div class="field">
+                <label>📂 分类</label>
+                <select id="category">
+                    <option value="software">软件工具</option>
+                    <option value="video">视频素材</option>
+                    <option value="3d">3D资产</option>
+                    <option value="audio">音频音效</option>
+                    <option value="nav">导航网站</option>
+                    <option value="other">其他</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>🎨 图标 (emoji)</label>
+                <input type="text" id="icon" value="📦" placeholder="📦">
+            </div>
+        </div>
+        
+        <div class="field">
+            <label>📄 描述</label>
+            <textarea id="desc" rows="2" placeholder="简单介绍一下这个素材..."></textarea>
+        </div>
+        
+        <div class="form-grid">
+            <div class="field">
+                <label>💾 文件大小</label>
+                <input type="text" id="size" placeholder="例：2.3GB">
+            </div>
+            <div class="field">
+                <label>🔥 热度</label>
+                <input type="number" id="hot" value="100" placeholder="数字">
+            </div>
+        </div>
+        
+        <div class="field">
+            <label>🔗 下载链接 *</label>
+            <input type="url" id="officialUrl" placeholder="https://yizhijumaogzs.github.io/uploads/文件名 或 外部下载链接">
+        </div>
+        
+        <button id="addMaterialBtn" class="btn-green" style="margin-top: 10px;">+ 添加素材</button>
     </div>
 
+    <!-- 素材列表 -->
     <div class="card">
         <h3>📋 当前素材列表</h3>
         <div id="materialListContainer">加载中...</div>
-        <button id="saveMaterialsBtn" class="btn-green" style="margin-top: 20px;">💾 保存到 GitHub</button>
+        <button id="saveMaterialsBtn" class="btn-green" style="margin-top: 20px;">💾 保存所有素材到 GitHub</button>
     </div>
 </div>
 <div id="toast" class="toast"></div>
@@ -155,17 +225,28 @@
 <script>
     // ========== 权限验证 ==========
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (!currentUser.isAdmin) {
-        alert('您没有权限访问管理员页面');
-        window.location.href = 'index.html';
+    if (!currentUser || !currentUser.isAdmin) {
+        alert('请先登录管理员账号');
+        window.location.href = 'login.html';
     }
 
     let materials = [];
     const REPO = 'yizhijumaogzs/yizhijumaogzs.github.io';
+    
+    // 获取 GitHub Token
+    let githubToken = localStorage.getItem('gh_token');
+    if (!githubToken) {
+        const token = prompt('🔐 需要 GitHub Token 才能保存素材\n获取地址: https://github.com/settings/tokens\n勾选 repo 权限即可\n\n粘贴你的 Token：');
+        if (token) {
+            githubToken = token;
+            localStorage.setItem('gh_token', githubToken);
+        }
+    }
 
-    function showToast(msg) {
+    function showToast(msg, isError = false) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
+        toast.style.background = isError ? '#e53e3e' : '#1e293b';
         toast.style.opacity = '1';
         setTimeout(() => toast.style.opacity = '0', 2500);
     }
@@ -175,6 +256,11 @@
         try {
             const url = `https://raw.githubusercontent.com/${REPO}/main/materials.json`;
             const res = await fetch(url + '?_=' + Date.now());
+            if (res.status === 404) {
+                materials = [];
+                renderMaterialList();
+                return;
+            }
             if (!res.ok) throw new Error();
             materials = await res.json();
             renderMaterialList();
@@ -187,24 +273,34 @@
     function renderMaterialList() {
         const container = document.getElementById('materialListContainer');
         if (!materials.length) {
-            container.innerHTML = '<div style="color: #8a99b0; text-align: center; padding: 20px;">暂无素材，请添加</div>';
+            container.innerHTML = '<div style="color: #8a99b0; text-align: center; padding: 20px;">暂无素材，点击上方添加</div>';
             return;
         }
+        
+        const categoryName = {
+            'software': '软件工具', 'video': '视频素材', '3d': '3D资产',
+            'audio': '音频音效', 'nav': '导航网站', 'other': '其他'
+        };
+        
         container.innerHTML = materials.map((m, idx) => `
             <div class="material-item">
-                <div><strong>${m.icon} ${m.title}</strong><br><small>${m.category} · ${m.size} · 🔥${m.hot}</small><br><small style="color:#07C160;">${m.officialUrl?.substring(0, 60)}...</small></div>
+                <div style="flex:1">
+                    <strong>${m.icon || '📦'} ${m.title}</strong>
+                    <div style="font-size:0.75rem; color:#7e8c9e; margin-top:4px;">${categoryName[m.category] || m.category} · ${m.size || '未知大小'} · 🔥${m.hot}</div>
+                    <div style="font-size:0.7rem; color:#07C160; margin-top:4px; word-break:break-all;">${(m.officialUrl || '').substring(0, 60)}${(m.officialUrl || '').length > 60 ? '...' : ''}</div>
+                </div>
                 <div class="actions">
-                    <button class="edit-material" data-idx="${idx}">✏️ 编辑</button>
-                    <button class="del-material" data-idx="${idx}">🗑️ 删除</button>
+                    <button class="edit-btn" data-idx="${idx}">✏️ 编辑</button>
+                    <button class="del-btn" data-idx="${idx}">🗑️ 删除</button>
                 </div>
             </div>
         `).join('');
         
-        document.querySelectorAll('.edit-material').forEach(btn => {
+        document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', () => editMaterial(parseInt(btn.dataset.idx)));
         });
-        document.querySelectorAll('.del-material').forEach(btn => {
-            btn.addEventListener('click', () => { materials.splice(parseInt(btn.dataset.idx),1); renderMaterialList(); });
+        document.querySelectorAll('.del-btn').forEach(btn => {
+            btn.addEventListener('click', () => { materials.splice(parseInt(btn.dataset.idx), 1); renderMaterialList(); showToast('已删除，记得保存'); });
         });
     }
 
@@ -212,65 +308,82 @@
         const m = materials[idx];
         document.getElementById('title').value = m.title;
         document.getElementById('category').value = m.category;
-        document.getElementById('desc').value = m.desc;
-        document.getElementById('icon').value = m.icon;
-        document.getElementById('size').value = m.size;
-        document.getElementById('hot').value = m.hot;
-        document.getElementById('officialUrl').value = m.officialUrl;
-        materials.splice(idx,1);
+        document.getElementById('icon').value = m.icon || '📦';
+        document.getElementById('desc').value = m.desc || '';
+        document.getElementById('size').value = m.size || '';
+        document.getElementById('hot').value = m.hot || 100;
+        document.getElementById('officialUrl').value = m.officialUrl || '';
+        materials.splice(idx, 1);
         renderMaterialList();
-        showToast('已载入编辑区，修改后点击“添加素材”');
+        showToast('已加载到编辑区，修改后点击"添加素材"');
     }
 
     document.getElementById('addMaterialBtn').addEventListener('click', () => {
-        const newItem = {
-            id: Date.now(),
-            title: document.getElementById('title').value,
-            category: document.getElementById('category').value,
-            desc: document.getElementById('desc').value,
-            icon: document.getElementById('icon').value,
-            size: document.getElementById('size').value,
-            hot: parseInt(document.getElementById('hot').value) || 0,
-            officialUrl: document.getElementById('officialUrl').value,
-            date: new Date().toISOString().slice(0,10)
-        };
-        if (!newItem.title || !newItem.officialUrl) {
-            showToast('标题和下载链接不能为空', true);
+        const title = document.getElementById('title').value.trim();
+        const officialUrl = document.getElementById('officialUrl').value.trim();
+        
+        if (!title) {
+            showToast('请填写标题', true);
             return;
         }
-        materials.push(newItem);
+        if (!officialUrl) {
+            showToast('请填写下载链接', true);
+            return;
+        }
+        
+        const newMaterial = {
+            id: Date.now(),
+            title: title,
+            category: document.getElementById('category').value,
+            desc: document.getElementById('desc').value,
+            icon: document.getElementById('icon').value || '📦',
+            size: document.getElementById('size').value || '未知',
+            hot: parseInt(document.getElementById('hot').value) || 100,
+            officialUrl: officialUrl,
+            date: new Date().toISOString().slice(0, 10)
+        };
+        
+        materials.push(newMaterial);
         renderMaterialList();
+        
+        // 清空表单
         document.getElementById('title').value = '';
         document.getElementById('desc').value = '';
         document.getElementById('officialUrl').value = '';
         document.getElementById('size').value = '';
-        showToast('已添加素材，记得点击“保存到 GitHub”');
+        document.getElementById('icon').value = '📦';
+        document.getElementById('hot').value = '100';
+        
+        showToast('已添加，记得点击"保存所有素材"');
     });
 
     // 保存素材到 GitHub
     async function saveMaterials() {
-        let token = localStorage.getItem('gh_token');
-        if (!token) {
-            token = prompt('🔐 需要 GitHub Token（repo权限）才能保存\n获取地址：https://github.com/settings/tokens\n\n只勾选 repo 即可\n\n粘贴你的 Token：');
-            if (token) localStorage.setItem('gh_token', token);
-            else return;
+        if (!githubToken) {
+            showToast('请先配置 GitHub Token', true);
+            return;
         }
         
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(materials, null, 2))));
         const url = `https://api.github.com/repos/${REPO}/contents/materials.json`;
         let sha = null;
         try {
-            const get = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
-            if (get.ok) sha = (await get.json()).sha;
+            const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}` } });
+            if (getRes.ok) sha = (await getRes.json()).sha;
         } catch(e) {}
         
         const res = await fetch(url, {
             method: 'PUT',
-            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
-            body: JSON.stringify({ message: 'Update materials', content, sha, branch: 'main' })
+            headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
+            body: JSON.stringify({ message: '更新素材列表', content, sha, branch: 'main' })
         });
-        if (res.ok) showToast('✅ 素材数据已保存');
-        else showToast('❌ 保存失败，Token 可能无效', true);
+        
+        if (res.ok) {
+            showToast('✅ 素材数据已保存');
+        } else {
+            const err = await res.json();
+            showToast('❌ 保存失败: ' + (err.message || 'Token 可能无效'), true);
+        }
     }
 
     document.getElementById('saveMaterialsBtn').addEventListener('click', saveMaterials);
@@ -280,7 +393,80 @@
         window.location.href = 'index.html';
     }
 
+    // 记录访问
+    async function recordAdminVisit() {
+        if (!githubToken) return;
+        try {
+            const clientInfo = await getClientInfo();
+            const visitRecord = {
+                id: Date.now(),
+                page: 'admin.html',
+                userId: currentUser.username || 'admin',
+                timestamp: new Date().toISOString(),
+                ip: clientInfo.ip,
+                location: clientInfo.location,
+                browser: clientInfo.browser,
+                os: clientInfo.os
+            };
+            
+            let logs = [];
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO}/contents/data/visits.json`, {
+                    headers: { 'Authorization': `token ${githubToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    logs = JSON.parse(atob(data.content));
+                }
+            } catch(e) {}
+            
+            logs.unshift(visitRecord);
+            if (logs.length > 500) logs = logs.slice(0, 500);
+            
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(logs, null, 2))));
+            const url = `https://api.github.com/repos/${REPO}/contents/data/visits.json`;
+            let sha = null;
+            try {
+                const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}` } });
+                if (getRes.ok) sha = (await getRes.json()).sha;
+            } catch(e) {}
+            
+            await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ message: '访问记录', content, sha, branch: 'main' })
+            });
+        } catch(e) {}
+    }
+    
+    async function getClientInfo() {
+        try {
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
+            const ua = navigator.userAgent;
+            let browser = '未知', os = '未知';
+            if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+            else if (ua.includes('Firefox')) browser = 'Firefox';
+            else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+            else if (ua.includes('Edg')) browser = 'Edge';
+            if (ua.includes('Windows')) os = 'Windows';
+            else if (ua.includes('Mac')) os = 'macOS';
+            else if (ua.includes('Linux')) os = 'Linux';
+            else if (ua.includes('Android')) os = 'Android';
+            else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+            return {
+                ip: ipData.ip || '未知',
+                location: `${ipData.city || ''} ${ipData.region || ''} ${ipData.country_name || ''}`.trim() || '未知',
+                browser: browser,
+                os: os
+            };
+        } catch(e) {
+            return { ip: '未知', location: '未知', browser: '未知', os: '未知' };
+        }
+    }
+
     loadMaterials();
+    recordAdminVisit();
 </script>
 </body>
 </html>
