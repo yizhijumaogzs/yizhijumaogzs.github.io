@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>灵感工坊 · 素材库</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #f5f7fb;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1a2c3e;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
+            padding: 12px 28px;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #07C160 0%, #059e4a 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #2c3e4e;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .nav-links a:hover { color: #07C160; }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #07C160;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* 搜索栏 */
+        .search-section {
+            max-width: 1400px;
+            margin: 32px auto 24px;
+            padding: 0 28px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            background: white;
+            border-radius: 60px;
+            padding: 6px 6px 6px 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 0.5px solid #e2e8f0;
+        }
+
+        .search-bar input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            background: transparent;
+            padding: 14px 0;
+        }
+
+        .search-bar button {
+            background: #07C160;
+            border: none;
+            border-radius: 50px;
+            padding: 0 28px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* 分类标签 */
+        .categories {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 28px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #e9edf2;
+            padding-bottom: 16px;
+        }
+
+        .cat-btn {
+            background: none;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #5e6f8d;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cat-btn.active {
+            background: #07C160;
+            color: white;
+        }
+
+        /* 素材网格 */
+        .grid {
+            max-width: 1400px;
+            margin: 32px auto;
+            padding: 0 28px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 0.5px solid #e9edf2;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .card h3 { font-size: 1.1rem; margin-bottom: 6px; }
+        .card-desc { font-size: 0.75rem; color: #7e8c9e; margin-bottom: 16px; line-height: 1.4; }
+        .card-meta { display: flex; justify-content: space-between; align-items: center; }
+        .tag {
+            background: #eef2f5;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+        }
+        .download-btn {
+            background: #07C160;
+            border-radius: 40px;
+            padding: 8px 18px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin: 20px 28px;
+            color: #07C160;
+            text-decoration: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 24px;
+            color: #8a99b0;
+            font-size: 0.75rem;
+            border-top: 0.5px solid #e2e8f0;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 680px) {
+            .navbar { padding: 12px 16px; }
+            .search-section, .categories, .grid { padding: 0 16px; }
+            .grid { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-inner">
+        <div class="logo">🎨 灵感工坊 · 素材库</div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="material.html">素材库</a>
+            <a href="privacy.html">隐私政策</a>
+            <div id="userSection">
+                <a href="login.html">登录/注册</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="search-section">
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="搜索素材...">
+        <button id="searchBtn">🔍 搜索</button>
+    </div>
+</div>
+
+<div class="categories" id="categoryTabs">
+    <button class="cat-btn active" data-cat="all">全部</button>
+    <button class="cat-btn" data-cat="nav">🌐 全能导航</button>
+    <button class="cat-btn" data-cat="video">🎬 影视资源</button>
+    <button class="cat-btn" data-cat="image">🖼️ 免费图库</button>
+    <button class="cat-btn" data-cat="book">📚 电子书库</button>
+    <button class="cat-btn" data-cat="pan">☁️ 网盘搜索</button>
+    <button class="cat-btn" data-cat="tool">🔧 在线工具</button>
+    <button class="cat-btn" data-cat="audio">🎵 音乐音效</button>
+    <button class="cat-btn" data-cat="ai">🤖 AI工具箱</button>
+</div>
+
+<div class="grid" id="materialGrid">
+    <!-- 卡片会动态加载 -->
+</div>
+
+<div style="text-align: center; margin: 20px;">
+    <a href="index.html" class="back-link">← 返回首页</a>
+</div>
+
+<footer>
+    <p>© 2026 灵感工坊 · 所有链接均跳转至官方网站</p>
+</footer>
+
+<script>
+    // 检查登录状态
+    const user = localStorage.getItem('currentUser');
+    const userSection = document.getElementById('userSection');
+    if (user) {
+        const userData = JSON.parse(user);
+        const initial = userData.username.charAt(0).toUpperCase();
+        userSection.innerHTML = `<div class="user-avatar" onclick="location.href='profile.html'">${initial}</div>`;
+    }
+
+    // ========== 宝藏网站大全 ==========
+    let allMaterials = [
+        // ========== 一、全能导航站 ==========
+        { title: "一糖导航", desc: "7000+网址合集，分类清晰，想要什么都能搜到", icon: "🍬", category: "nav", officialUrl: "https://iitang.com" },
+        { title: "bimiseek", desc: "无广告全能导航，涵盖AI/设计/编程/写作等200+工具", icon: "🔍", category: "nav", officialUrl: "https://bimiseek.com" },
+        { title: "虫部落", desc: "搜索聚合神器，一个搜索框切换十几个搜索引擎", icon: "🐛", category: "nav", officialUrl: "https://search.chongbuluo.com" },
+        { title: "爱达杂货铺", desc: "实用工具百宝箱，视频/网盘/软件/阅读一站式", icon: "🛒", category: "nav", officialUrl: "https://adzhp.cc" },
+        { title: "创造狮导航", desc: "设计+前端+产品+运营四合一，创意工作者必备", icon: "🦁", category: "nav", officialUrl: "https://chuangzaoshi.com" },
+        { title: "优设导航", desc: "设计师灵感库，AIGC/UI/图库/教程全收录", icon: "🎨", category: "nav", officialUrl: "https://hao.uisdc.com" },
+        { title: "程序员导航", desc: "码农效率站，编程社区/技术博客/在线工具聚合", icon: "💻", category: "nav", officialUrl: "https://code-nav.top" },
+        { title: "奶酪清单", desc: "深度好站推荐，站长的认知水平很高", icon: "🧀", category: "nav", officialUrl: "https://www.runningcheese.com/a" },
+        { title: "资源猫", desc: "优质资源网站导航", icon: "🐱", category: "nav", officialUrl: "https://www.ziyuanm.com" },
+        { title: "Tbox导航", desc: "收集导航的导航网站", icon: "📦", category: "nav", officialUrl: "https://www.tboxn.com" },
+        { title: "龙轩导航", desc: "高质量网址导航，精选实用网站", icon: "🐉", category: "nav", officialUrl: "https://iloxn.com" },
+        { title: "考拉导航", desc: "简洁实用的网址导航", icon: "🐨", category: "nav", officialUrl: "https://kaoladaohang.com" },
+
+        // ========== 二、影视/4K资源站 ==========
+        { title: "4K指南", desc: "4K原盘资源免费下载，支持搜索，无水印无广告", icon: "🎬", category: "video", officialUrl: "https://xuexizhinan.com" },
+        { title: "高清影视资源收藏夹", desc: "4K影视下载导航", icon: "📀", category: "video", officialUrl: "https://zyscj.com/zy/video/HDvideo.html" },
+        { title: "光厂", desc: "国内正版素材标杆，AI超分引擎，8K素材每日更新", icon: "🏭", category: "video", officialUrl: "https://www.vjshi.com" },
+        { title: "Artgrid", desc: "好莱坞电影级素材，ARRI Alexa拍摄，14档动态范围", icon: "🎥", category: "video", officialUrl: "https://artgrid.io" },
+        { title: "Filmsupply", desc: "纪实风格专家，Netflix纪录片团队常用", icon: "📽️", category: "video", officialUrl: "https://www.filmsupply.com" },
+        { title: "Pond5", desc: "全球最大高清素材市场，800万条4K资源", icon: "🌊", category: "video", officialUrl: "https://www.pond5.com" },
+        { title: "Motion Array", desc: "动态图形航母，AE模板+4K素材+LUT调色包", icon: "🎞️", category: "video", officialUrl: "https://motionarray.com" },
+        { title: "Storyblocks", desc: "会员制无限下载，覆盖医疗/教育等28个领域", icon: "📚", category: "video", officialUrl: "https://www.storyblocks.com" },
+        { title: "Dissolve", desc: "国际品牌合作首选，艺术化电影感短片", icon: "💧", category: "video", officialUrl: "https://dissolve.com" },
+        { title: "Videvo", desc: "绿幕抠像标杆，带Alpha通道透明背景素材", icon: "🎬", category: "video", officialUrl: "https://www.videvo.net" },
+        { title: "制片帮", desc: "国内素材宝库，海量高清视频+音乐素材", icon: "🎬", category: "video", officialUrl: "https://www.zhipianbang.com" },
+        { title: "新片场素材", desc: "国内高品质视频素材平台", icon: "🎥", category: "video", officialUrl: "https://stock.xinpianchang.com" },
+
+        // ========== 三、免费图库/素材 ==========
+        { title: "Pexels", desc: "全球创作者青睐的免费高清图库，图片+视频全免费", icon: "📷", category: "image", officialUrl: "https://www.pexels.com" },
+        { title: "Pixabay", desc: "200万+免费素材，图片/插画/视频/音乐全都有", icon: "🎨", category: "image", officialUrl: "https://pixabay.com" },
+        { title: "Mixkit", desc: "免费8K艺术短片+音效，色彩实验室一键配色", icon: "🎵", category: "image", officialUrl: "https://mixkit.co" },
+        { title: "Life of Vids", desc: "免版权商用视频，咖啡馆/办公场景生活化内容", icon: "🌱", category: "image", officialUrl: "https://lifeofvids.com" },
+        { title: "Unsplash", desc: "全球最知名免费高清图库，摄影师最爱", icon: "📸", category: "image", officialUrl: "https://unsplash.com" },
+        { title: "Stockvault", desc: "免费照片和图形设计素材", icon: "🏦", category: "image", officialUrl: "https://www.stockvault.net" },
+
+        // ========== 四、电子书/阅读 ==========
+        { title: "鸠摩搜书", desc: "老牌电子书搜索引擎，PDF/EPUB/MOBI", icon: "📚", category: "book", officialUrl: "https://www.jiumodiary.com" },
+        { title: "Z-Library", desc: "全球最大电子书库，千万册图书", icon: "📖", category: "book", officialUrl: "https://zh.z-lib.work" },
+        { title: "Anna's Archive", desc: "全球最大影子图书馆镜像", icon: "📕", category: "book", officialUrl: "https://annas-archive.org" },
+        { title: "Project Gutenberg", desc: "7万+公版英文电子书，免费下载", icon: "📘", category: "book", officialUrl: "https://www.gutenberg.org" },
+        { title: "书格", desc: "高质量古籍/公版书下载", icon: "🏯", category: "book", officialUrl: "https://www.shuge.org" },
+        { title: "熊猫搜索", desc: "多格式电子书搜索", icon: "🐼", category: "book", officialUrl: "https://xmsoushu.com" },
+        { title: "TheFuture电子书", desc: "聚合电子书资源", icon: "🔮", category: "book", officialUrl: "https://bks.thefuture.top" },
+        { title: "PDF Drive", desc: "免费PDF电子书搜索引擎", icon: "📄", category: "book", officialUrl: "https://www.pdfdrive.com" },
+        { title: "ManyBooks", desc: "5万+免费英文公版电子书", icon: "📚", category: "book", officialUrl: "https://manybooks.net" },
+        { title: "读书小站", desc: "EPUB/PDF电子书下载", icon: "🏠", category: "book", officialUrl: "https://ibooks.org.cn" },
+
+        // ========== 五、网盘搜索 ==========
+        { title: "UP云搜", desc: "阿里云盘资源搜索", icon: "☁️", category: "pan", officialUrl: "https://www.upyunso.com" },
+        { title: "易搜", desc: "阿里云盘/夸克/百度网盘资源聚合", icon: "🔎", category: "pan", officialUrl: "https://yiso.fun" },
+        { title: "小白盘", desc: "百度网盘资源搜索", icon: "🐻", category: "pan", officialUrl: "https://www.xiaobaipan.com" },
+        { title: "大圣盘", desc: "百度网盘资源聚合", icon: "🐵", category: "pan", officialUrl: "https://www.dashengpan.com" },
+        { title: "狸猫盘搜", desc: "阿里云盘资源聚合", icon: "🐱", category: "pan", officialUrl: "https://www.alipansou.com" },
+        { title: "兄弟盘", desc: "百度网盘资源搜索", icon: "👬", category: "pan", officialUrl: "https://xiongdipan.com" },
+        { title: "盘搜搜", desc: "网盘资源搜索引擎", icon: "🔍", category: "pan", officialUrl: "https://www.pansoso.com" },
+
+        // ========== 六、在线工具 ==========
+        { title: "虫部落-电子书", desc: "电子书聚合搜索", icon: "🐛", category: "tool", officialUrl: "https://www.giffox.com" },
+        { title: "非凡搜索", desc: "干净无广告的聚合搜索引擎", icon: "✨", category: "tool", officialUrl: "https://ffsou.com" },
+        { title: "Niostack", desc: "简洁聚合导航浏览器", icon: "🌐", category: "tool", officialUrl: "https://so.niostack.com" },
+        { title: "资源帝", desc: "小说/电子书资源导航", icon: "👑", category: "tool", officialUrl: "https://shu.ziyuandi.cn" },
+        { title: "在线工具大全", desc: "程序员在线工具集合", icon: "🛠️", category: "tool", officialUrl: "https://tool.lu" },
+        { title: "Smallpdf", desc: "免费PDF处理工具", icon: "📑", category: "tool", officialUrl: "https://smallpdf.com" },
+
+        // ========== 七、音乐/音效 ==========
+        { title: "Mazwai", desc: "旅行纪录片航拍素材，Apple ProRes格式", icon: "🎵", category: "audio", officialUrl: "https://mazwai.com" },
+        { title: "Ignite Motion", desc: "科幻与抽象特效素材，粒子流动光影", icon: "⚡", category: "audio", officialUrl: "https://ignitemotion.com" },
+        { title: "Freesound", desc: "免费音效社区，海量CC0音效", icon: "🔊", category: "audio", officialUrl: "https://freesound.org" },
+        { title: "网易云音乐", desc: "国内最大音乐社区", icon: "🎧", category: "audio", officialUrl: "https://music.163.com" },
+
+        // ========== 八、AI工具箱 ==========
+        { title: "DeepSeek", desc: "深度求索AI助手，免费好用", icon: "🔍", category: "ai", officialUrl: "https://www.deepseek.com" },
+        { title: "Kimi", desc: "月之暗面AI助手，长文本处理", icon: "🌟", category: "ai", officialUrl: "https://kimi.moonshot.cn" },
+        { title: "豆包", desc: "字节跳动AI助手", icon: "🫘", category: "ai", officialUrl: "https://www.doubao.com" },
+        { title: "通义千问", desc: "阿里云AI助手", icon: "🔮", category: "ai", officialUrl: "https://tongyi.aliyun.com" },
+        { title: "文心一言", desc: "百度AI大模型", icon: "📝", category: "ai", officialUrl: "https://yiyan.baidu.com" },
+        { title: "讯飞星火", desc: "科大讯飞AI助手", icon: "🔥", category: "ai", officialUrl: "https://xinghuo.xfyun.cn" },
+        { title: "AI工具箱", desc: "AI工具大全，写作/图像/视频/编程全分类", icon: "🤖", category: "ai", officialUrl: "https://www.ai工具箱.com" },
+        { title: "Midjourney", desc: "顶级AI绘画工具", icon: "🎨", category: "ai", officialUrl: "https://www.midjourney.com" }
+    ];
+
+    let currentCategory = "all";
+    let currentSearch = "";
+
+    function renderMaterials() {
+        let filtered = allMaterials;
+        if (currentCategory !== "all") {
+            filtered = filtered.filter(m => m.category === currentCategory);
+        }
+        if (currentSearch.trim() !== "") {
+            const kw = currentSearch.toLowerCase();
+            filtered = filtered.filter(m => m.title.toLowerCase().includes(kw) || m.desc.toLowerCase().includes(kw));
+        }
+        
+        const grid = document.getElementById("materialGrid");
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px;">没有找到相关素材</div>';
+            return;
+        }
+        
+        // 分类名称映射
+        const catName = {
+            'nav': '导航站', 'video': '影视', 'image': '图库', 
+            'book': '电子书', 'pan': '网盘', 'tool': '工具', 
+            'audio': '音效', 'ai': 'AI工具'
+        };
+        
+        grid.innerHTML = filtered.map(m => `
+            <div class="card">
+                <div class="card-icon">${m.icon}</div>
+                <h3>${m.title}</h3>
+                <div class="card-desc">${m.desc}</div>
+                <div class="card-meta">
+                    <span class="tag">${catName[m.category] || m.category}</span>
+                    <a href="${m.officialUrl}" target="_blank" rel="noopener noreferrer" class="download-btn">访问 →</a>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    // 分类切换
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCategory = btn.dataset.cat;
+            renderMaterials();
+        });
+    });
+
+    // 搜索
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        currentSearch = document.getElementById('searchInput').value;
+        renderMaterials();
+    });
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            currentSearch = e.target.value;
+            renderMaterials();
+        }
+    });
+
+    renderMaterials();
+</script>
+</body>
+</html>
