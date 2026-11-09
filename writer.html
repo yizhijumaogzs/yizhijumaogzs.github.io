@@ -438,7 +438,7 @@
                 <span>🔤 文字轨迹</span>
                 <span class="tag">描边示意</span>
             </h2>
-            <p class="wk-sub">用系统字体离屏渲染文字后逐行扫描像素生成笔画，不依赖任何网络字体；文字自动居中，超出 256×256 会自动等比缩放。</p>
+            <p class="wk-sub">用系统字体在离屏画布按 4 倍超采样渲染，二值化后做 Moore 邻域边界追踪提取闭合矢量轮廓，再用 Douglas-Peucker 简化成折线（接近参考样例的点距 0.02~0.6mm）；不依赖任何网络字体与外部库，文字自动居中，超出 256×256 会自动等比缩放。</p>
 
             <div class="wk-tools">
                 <div class="wk-field" style="grid-column: 1 / -1;">
@@ -462,7 +462,22 @@
                     </select>
                 </div>
                 <div class="wk-field">
-                    <label class="wk-label" for="scanStep">扫描精度 <b id="scanStepVal">2</b></label>
+                    <label class="wk-label" for="traceMode">轨迹模式</label>
+                    <select class="wk-select" id="traceMode">
+                        <option value="contour">轮廓描边（矢量，对齐参考样例）</option>
+                        <option value="scan">扫描填充（逐行扫描线）</option>
+                    </select>
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="simplifyTol">轮廓简化精度（mm）</label>
+                    <input class="wk-input" id="simplifyTol" type="number" min="0.02" max="2" step="0.01" value="0.15">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="minArea">最小轮廓面积（mm²）</label>
+                    <input class="wk-input" id="minArea" type="number" min="0" max="50" step="0.1" value="0.5">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="scanStep">扫描精度（填充模式）<b id="scanStepVal">2</b></label>
                     <input class="wk-range" type="range" id="scanStep" min="1" max="4" step="1" value="2">
                 </div>
             </div>
@@ -478,16 +493,33 @@
                 <span>⚙️ G-code 生成</span>
                 <span class="tag">Bambu P1S · 256×256</span>
             </h2>
-            <p class="wk-sub">生成的文本会先在开头插入 M104 S0 / M140 S0 / M630 S0 P0，末尾固定为 G1 Z8.0 F1000 与 G0 X0 Y0。</p>
+            <p class="wk-sub">写法对齐参考样例：除末尾固定回零外全部使用 G1，靠 Z 轴抬落笔（落笔 Z 默认 4.0、抬笔 Z 默认 8.0），抬笔状态空移 → 落笔 → 逐点绘制 → 抬笔循环，F 值统一 1000；开头仍插入 M104 S0 / M140 S0 / M630 S0 P0，末尾固定为 G1 Z8.0 F1000 与 G0 X0 Y0。</p>
+            <p class="wk-sub" style="color:#b87407;">收尾安全约定：文件末尾固定只有 G1 Z8.0 F1000 与 G0 X0 Y0 两行，不包含 M84 / M18 / M400 / G28 等任何停机或回零指令，收尾动作交由打印机固件自行完成（防止物理撞机）。生成与下载前都会对末尾两行做逐字符校验，一旦不符合约定即禁止导出。为避免末尾固定抬升（Z8.0）反而下压喷头，抬笔 Z 上限锁定为 8.0。</p>
 
             <div class="wk-tools">
                 <div class="wk-field">
-                    <label class="wk-label" for="speed">绘制速度（mm/min）</label>
-                    <input class="wk-input" id="speed" type="number" min="100" max="12000" step="100" value="1500">
+                    <label class="wk-label" for="penDownZ">落笔 Z（mm）</label>
+                    <input class="wk-input" id="penDownZ" type="number" min="0.2" max="8" step="0.1" value="4">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="penUpZ">抬笔 Z（mm）</label>
+                    <input class="wk-input" id="penUpZ" type="number" min="0.2" max="8" step="0.1" value="8">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="speed">绘制速度 F（mm/min）</label>
+                    <input class="wk-input" id="speed" type="number" min="100" max="12000" step="100" value="1000">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="travelSpeed">空移速度 F（mm/min）</label>
+                    <input class="wk-input" id="travelSpeed" type="number" min="100" max="12000" step="100" value="1000">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="zSpeed">Z 轴速度 F（mm/min）</label>
+                    <input class="wk-input" id="zSpeed" type="number" min="50" max="6000" step="50" value="1000">
                 </div>
                 <div class="wk-field">
                     <label class="wk-label" for="speedView">当前速度</label>
-                    <input class="wk-input" id="speedView" type="text" value="F1500" readonly>
+                    <input class="wk-input" id="speedView" type="text" value="F1000" readonly>
                 </div>
             </div>
 
@@ -526,13 +558,26 @@
        ========================================================= */
     const SIZE = 256;                       // 热床逻辑尺寸（mm），坐标范围 0 ~ 256
     const HEAD_LINES = ['M104 S0', 'M140 S0', 'M630 S0 P0'];   // 开头固定三行
-    const INIT_LINES = ['G21', 'G90', 'G1 Z5 F1000'];          // 基础设置与安全抬升
+    const INIT_LINES = ['G21', 'G90'];      // 基础设置行（Z 抬升行由 buildInitLines 按抬笔 Z 动态生成）
     const TAIL_LIFT = 'G1 Z8.0 F1000';      // 末行替换目标之一
     const TAIL_HOME = 'G0 X0 Y0';           // 末尾最后一行
-    const TRAVEL_SPEED = 3000;              // 空移速度（mm/min，仅用于估算时长）
-    const PEN_DELAY_SEC = 0.8;              // 每笔抬落笔的时间估算（秒）
+    const TAIL_EXPECT = [TAIL_LIFT, TAIL_HOME];  // 末尾两行的唯一合法形态（逐字符比较，禁止改写数值位数）
+    // 停机 / 回零类指令黑名单：末尾一旦出现即可能物理撞机，禁止进入 G-code
+    // 注意：M104\s+S0\s+M 只针对「M104 S0 M…」这类连写，不会误伤开头合法插入的 M104 S0 / M140 S0 / M630 S0 P0
+    const FORBIDDEN_RE = /^\s*(M84|M18|M400|G28|M104\s+S0\s+M|M141|M191)\b/i;
     const LETTERBOX = 12;                   // 文字距边界的最小留白（mm）
     const MAX_TEXT_STROKES = 1200;          // 文字轨迹笔画数提示阈值
+
+    // ---- 参考样例 page_1.gcode 对齐参数（落笔 Z / 抬笔 Z / 三档 F 值）----
+    const PEN_DOWN_Z = 4.0;                 // 落笔 Z（mm），对应样例 G1 Z4.0 F1000
+    const PEN_UP_Z = 8.0;                   // 抬笔 Z（mm），对应样例 G1 Z8.0 F1000；上限锁定 8.0
+    const DRAW_F = 1000;                    // 绘制速度 F（mm/min）
+    const TRAVEL_F = 1000;                  // 空移速度 F（mm/min）
+    const Z_F = 1000;                       // Z 轴速度 F（mm/min）
+    const SIMPLIFY_TOL = 0.15;              // 轮廓 Douglas-Peucker 简化精度（mm）
+    const MIN_CONTOUR_AREA = 0.5;           // 最小轮廓面积（mm²），用于滤掉噪点
+    const SUPERSAMPLE = 4;                  // 轮廓模式离屏渲染超采样倍数
+    const MAX_SEG_LEN = 0.5;                // 轮廓重采样最大点距（mm），贴近样例 0.02~0.6mm 的点距
 
     /* =========================================================
        2. 运行状态
@@ -567,8 +612,15 @@
     const fontSelect = document.getElementById('fontSelect');
     const scanStep = document.getElementById('scanStep');
     const scanStepVal = document.getElementById('scanStepVal');
+    const traceMode = document.getElementById('traceMode');
+    const simplifyTolInput = document.getElementById('simplifyTol');
+    const minAreaInput = document.getElementById('minArea');
     const btnText = document.getElementById('btnText');
+    const penDownZInput = document.getElementById('penDownZ');
+    const penUpZInput = document.getElementById('penUpZ');
     const speedInput = document.getElementById('speed');
+    const travelSpeedInput = document.getElementById('travelSpeed');
+    const zSpeedInput = document.getElementById('zSpeed');
     const speedView = document.getElementById('speedView');
     const btnBuild = document.getElementById('btnBuild');
     const btnDownload = document.getElementById('btnDownload');
@@ -586,6 +638,29 @@
     /** 数值钳制 */
     function clamp(v, min, max) {
         return v < min ? min : (v > max ? max : v);
+    }
+
+    /** 保留 1 位小数（Z 值），规避浮点误差 */
+    function round1(v) {
+        return Math.round(Number(v) * 10) / 10;
+    }
+
+    /** 数字格式：坐标 2 位小数、Z 值 1 位小数、F 取整（与参考样例一致） */
+    function fmtXY(x, y) {
+        return 'X' + x.toFixed(2) + ' Y' + y.toFixed(2);
+    }
+    function fmtZ(z) {
+        return 'Z' + round1(z).toFixed(1);
+    }
+    function fmtF(f) {
+        return 'F' + Math.round(f);
+    }
+
+    /** 基础设置行：G21 / G90 + 按抬笔 Z 生成的安全抬升行 */
+    function buildInitLines(penUpZ, zF) {
+        const lines = INIT_LINES.slice();
+        lines.push('G1 ' + fmtZ(penUpZ) + ' ' + fmtF(zF));
+        return lines;
     }
 
     /** 提示条展示：kind = ok | warn | err */
@@ -637,7 +712,11 @@
             lines.push(TAIL_LIFT);
         } else {
             const last = lines[lines.length - 1];
-            const keepBody = /^G1\s+X/i.test(last) || last === INIT_LINES[INIT_LINES.length - 1];
+            const isDraw = /^G1\s+X/i.test(last);                    // 绘制行（G1 X.. Y.. F..）
+            const isPenUp = /^G1\s+Z[\d.]+\s+F\d+$/i.test(last);     // 抬笔 Z 行
+            const isPenUpAt8 = /^G1\s+Z(?:8|8\.0+)\s+F\d+$/i.test(last); // 抬笔 Z 已是 8.0
+            // 抬笔行已经抬到 8.0 时直接替换（不复制），否则先保留该抬笔行再补 TAIL_LIFT，避免末尾出现两行相同 Z
+            const keepBody = isDraw || (isPenUp && !isPenUpAt8);
             if (keepBody) lines.push(last);   // 正文行复制保留
             lines[lines.length - 1] = TAIL_LIFT;   // 替换最后一行
         }
@@ -646,25 +725,84 @@
     }
 
     /**
+     * 收尾安全闸门：锁死「末尾不得出现任何额外代码」这条硬约束。
+     * 校验项：
+     * ① 末两行必须逐字符等于 ['G1 Z8.0 F1000', 'G0 X0 Y0']（G0 X0 Y0 不得被改写成 G0 X0.00 Y0.00 等）；
+     * ② 全文不得出现停机 / 回零类黑名单指令（M84、M18、M400、G28、M104 S0 M…、M141、M191）；
+     * ③ 不得存在空行（末尾空行会让固件读到空指令，等同于追加代码）；
+     * ④ 不得存在注释行（; 开头），保持 G-code 纯指令流。
+     * 收尾动作全部交由打印机固件自行完成，避免物理撞机。
+     * @param {Array<string>} lines 待输出的 G-code 行数组
+     * @returns {{ok:boolean, reason:string}} 通过返回 {ok:true, reason:''}
+     */
+    function guardTailSafe(lines) {
+        const list = Array.isArray(lines) ? lines : [];
+
+        // ① 体量下限：至少要有末两行
+        if (list.length < TAIL_EXPECT.length) {
+            return { ok: false, reason: 'G-code 行数不足，缺少末尾固定两行' };
+        }
+
+        // ② 末尾两行逐字符比对（严格相等，不做 trim、不做数值归一化）
+        const tailStart = list.length - TAIL_EXPECT.length;
+        for (let i = 0; i < TAIL_EXPECT.length; i++) {
+            const actual = list[tailStart + i];
+            if (actual !== TAIL_EXPECT[i]) {
+                return {
+                    ok: false,
+                    reason: '倒数第 ' + (TAIL_EXPECT.length - i) + ' 行应为 "' + TAIL_EXPECT[i] +
+                            '"，实际为 "' + String(actual) + '"'
+                };
+            }
+        }
+
+        // ③ 全文扫描：空行 / 注释行 / 停机与回零黑名单
+        for (let i = 0; i < list.length; i++) {
+            const line = String(list[i]);
+            if (/^\s*$/.test(line)) {
+                return { ok: false, reason: '第 ' + (i + 1) + ' 行为空行' };
+            }
+            if (/^\s*;/.test(line)) {
+                return { ok: false, reason: '第 ' + (i + 1) + ' 行为注释行 "' + line.trim() + '"' };
+            }
+            if (FORBIDDEN_RE.test(line)) {
+                return {
+                    ok: false,
+                    reason: '第 ' + (i + 1) + ' 行含禁止的停机 / 回零指令 "' + line.trim() + '"'
+                };
+            }
+        }
+
+        return { ok: true, reason: '' };
+    }
+
+    /**
      * 核心：由轨迹笔画构建完整 G-code 文本
      * @param {Array} strokes  笔画数组，每笔 { points:[{x,y}, ...] }
-     * @param {Object} opts    { speed: number }
+     * @param {Object} opts    { drawF, travelF, zF, penDownZ, penUpZ }（speed 为 drawF 的历史别名）
      * @returns {{text:string, stats:Object}}
      */
     function buildGcode(strokes, opts) {
         const options = opts || {};
-        const speed = Math.round(clamp(Number(options.speed) || 1500, 100, 12000));
+        const drawF = Math.round(clamp(Number(options.drawF || options.speed) || DRAW_F, 100, 12000));
+        const travelF = Math.round(clamp(Number(options.travelF) || TRAVEL_F, 100, 12000));
+        const zF = Math.round(clamp(Number(options.zF) || Z_F, 50, 6000));
+        // 抬笔 Z 上限锁定 8.0：末尾固定为 G1 Z8.0 F1000，若抬笔高于 8 会被末尾行反向下压，存在刮蹭风险
+        const penUpZ = round1(clamp(Number(options.penUpZ) || PEN_UP_Z, 0.2, PEN_UP_Z));
+        // 落笔 Z 不得高于抬笔 Z，且至少留 0.5mm 抬刀间隙，避免"抬笔=落笔"导致空移拖墨
+        const penDownZ = round1(clamp(Number(options.penDownZ) || PEN_DOWN_Z, 0.2, Math.max(0.2, round1(penUpZ - 0.5))));
 
         const lines = [];
         // ① 开头固定三行（自动后处理插入）
         HEAD_LINES.forEach(function (l) { lines.push(l); });
-        // ② 基础设置行
-        INIT_LINES.forEach(function (l) { lines.push(l); });
+        // ② 基础设置行（G21 / G90 + 按抬笔 Z 生成的安全抬升行）
+        buildInitLines(penUpZ, zF).forEach(function (l) { lines.push(l); });
 
         let strokeCount = 0;
-        let pointCount = 0;
-        let drawLen = 0;      // 绘制总长度
-        let travelLen = 0;    // 空移总长度
+        let pointCount = 0;   // 所有 X/Y 定位行（含空移行与绘制行）
+        let drawLen = 0;      // 落笔状态下的绘制总长度
+        let travelLen = 0;    // 抬笔状态下的空移总长度
+        let zMoveCount = 0;   // 抬落笔次数
         let overflowCount = 0;// 越界点数量（已钳制）
         let prevEnd = null;
 
@@ -680,12 +818,15 @@
             fx = clamp(fx, 0, SIZE);
             fy = clamp(fy, 0, SIZE);
 
-            // 笔间空移
+            // 笔间空移：上一笔结束已抬笔，本次移动在抬笔状态下进行
             if (prevEnd) travelLen += Math.hypot(fx - prevEnd.x, fy - prevEnd.y);
 
-            // 每笔起点用 G0（不挤出）
-            lines.push('G0 X' + fx.toFixed(2) + ' Y' + fy.toFixed(2));
+            // ① 抬笔状态空移（统一用 G1 + 空移 F，与参考样例一致，全程不再使用 G0）
+            lines.push('G1 ' + fmtXY(fx, fy) + ' ' + fmtF(travelF));
             pointCount++;
+            // ② 落笔
+            lines.push('G1 ' + fmtZ(penDownZ) + ' ' + fmtF(zF));
+            zMoveCount++;
 
             let lastX = fx;
             let lastY = fy;
@@ -698,32 +839,50 @@
                 x = clamp(x, 0, SIZE);
                 y = clamp(y, 0, SIZE);
 
-                lines.push('G1 X' + x.toFixed(2) + ' Y' + y.toFixed(2) + ' F' + speed);
+                lines.push('G1 ' + fmtXY(x, y) + ' ' + fmtF(drawF));
                 drawLen += Math.hypot(x - lastX, y - lastY);
                 lastX = x;
                 lastY = y;
                 pointCount++;
             }
+            // ③ 抬笔（保证下一笔空移前笔头抬起）
+            lines.push('G1 ' + fmtZ(penUpZ) + ' ' + fmtF(zF));
+            zMoveCount++;
             prevEnd = { x: lastX, y: lastY };
         });
 
         // ③ 末尾：替换最后一行 + 追加回零
         finalizeTail(lines);
 
-        // ④ 估算时长（绘制 + 空移 + 抬落笔开销）
-        const drawSec = speed > 0 ? (drawLen / speed) * 60 : 0;
-        const travelSec = (travelLen / TRAVEL_SPEED) * 60 + strokeCount * PEN_DELAY_SEC;
-        const estSec = drawSec + travelSec;
+        // ③.5 收尾安全闸门：返回前校验末尾只有固定两行、全文无停机/回零黑名单
+        const guard = guardTailSafe(lines);
+        const text = lines.join('\n');
+
+        // ④ 估算时长（绘制 + 空移 + Z 抬落笔行程）
+        const drawSec = drawF > 0 ? (drawLen / drawF) * 60 : 0;
+        const travelSec = travelF > 0 ? (travelLen / travelF) * 60 : 0;
+        const zLen = zMoveCount * Math.abs(penUpZ - penDownZ);
+        const zSec = zF > 0 ? (zLen / zF) * 60 : 0;
+        const estSec = drawSec + travelSec + zSec;
 
         return {
-            text: lines.join('\n'),
+            text: text,
+            safe: guard.ok,              // 收尾安全校验结果：false 时禁止导出
+            guardReason: guard.reason,   // 未通过的具体原因
             stats: {
                 lines: lines.length,
                 strokes: strokeCount,
                 points: pointCount,
                 length: drawLen,
                 travel: travelLen,
-                speed: speed,
+                speed: drawF,
+                drawF: drawF,
+                travelF: travelF,
+                zF: zF,
+                penDownZ: penDownZ,
+                penUpZ: penUpZ,
+                zMoves: zMoveCount,
+                zLength: zLen,
                 seconds: estSec,
                 overflow: overflowCount
             }
@@ -940,8 +1099,338 @@
     }
 
     /* =========================================================
-       8. 文字转轨迹（离屏渲染 + 逐行扫描像素）
+       7.5 矢量轮廓提取（Moore 邻域边界追踪 + Douglas-Peucker 简化）
        ========================================================= */
+
+    // 8 邻域偏移：0=E, 1=SE, 2=S, 3=SW, 4=W, 5=NW, 6=N, 7=NE（顺时针递增）
+    const NB_DX = [1, 1, 0, -1, -1, -1, 0, 1];
+    const NB_DY = [0, 1, 1, 1, 0, -1, -1, -1];
+
+    /** 闭合折线面积（shoelace，正负表示绕向） */
+    function polyArea(pts) {
+        let s = 0;
+        for (let i = 0; i < pts.length; i++) {
+            const a = pts[i];
+            const b = pts[(i + 1) % pts.length];
+            s += a.x * b.y - b.x * a.y;
+        }
+        return s / 2;
+    }
+
+    /**
+     * Moore 邻域边界追踪：从边界像素出发沿 8 邻域顺时针走完一条闭合轮廓
+     * @param {Function} isInk (x, y) => boolean，true 表示属于待追踪区域
+     * @param {number} sx 起点 x（像素）
+     * @param {number} sy 起点 y（像素）
+     * @param {number} W 掩码宽
+     * @param {number} H 掩码高
+     * @param {number} maxSteps 最大步数（防异常掩码死循环）
+     * @returns {Array<Array<number>>} 轮廓像素坐标序列 [[x, y], ...]
+     */
+    function mooreTrace(isInk, sx, sy, W, H, maxSteps) {
+        const pts = [[sx, sy]];
+        let cx = sx;
+        let cy = sy;
+        // 起点统一取「最左列」，等价于上一步从西方进入，因此回溯方向从 W 开始顺时针搜索
+        let backDir = 4;
+        for (let step = 0; step < maxSteps; step++) {
+            let nextDir = -1;
+            for (let k = 0; k < 8; k++) {
+                const d = (backDir + k) % 8;
+                const nx = cx + NB_DX[d];
+                const ny = cy + NB_DY[d];
+                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+                if (isInk(nx, ny)) {
+                    nextDir = d;
+                    cx = nx;
+                    cy = ny;
+                    break;
+                }
+            }
+            if (nextDir < 0) break;                 // 孤立像素
+            pts.push([cx, cy]);
+            if (cx === sx && cy === sy) break;      // 回到起点，闭合
+            // 从「来路方向的下一个方向」继续搜索，避免原地折返
+            backDir = (nextDir + 5) % 8;
+        }
+        return pts;
+    }
+
+    /**
+     * Douglas-Peucker 简化（显式栈迭代实现，避免深递归爆栈）
+     * @param {Array<{x:number,y:number}>} pts 折线点
+     * @param {number} tol 容差（与坐标同单位）
+     * @returns {Array<{x:number,y:number}>}
+     */
+    function douglasPeucker(pts, tol) {
+        const n = pts.length;
+        if (n < 3 || tol <= 0) return pts.slice();
+        const keep = new Uint8Array(n);
+        keep[0] = 1;
+        keep[n - 1] = 1;
+        const stack = [[0, n - 1]];
+        const tol2 = tol * tol;
+        while (stack.length) {
+            const seg = stack.pop();
+            const a = seg[0];
+            const b = seg[1];
+            if (b - a < 2) continue;
+            const ax = pts[a].x;
+            const ay = pts[a].y;
+            const dx = pts[b].x - ax;
+            const dy = pts[b].y - ay;
+            const len2 = dx * dx + dy * dy;
+            let maxD2 = -1;
+            let maxI = -1;
+            for (let i = a + 1; i < b; i++) {
+                const px = pts[i].x - ax;
+                const py = pts[i].y - ay;
+                let d2;
+                if (len2 <= 1e-12) {
+                    d2 = px * px + py * py;
+                } else {
+                    const t = (px * dx + py * dy) / len2;
+                    const crx = px - t * dx;
+                    const cry = py - t * dy;
+                    d2 = crx * crx + cry * cry;
+                }
+                if (d2 > maxD2) {
+                    maxD2 = d2;
+                    maxI = i;
+                }
+            }
+            if (maxD2 > tol2 && maxI > 0) {
+                keep[maxI] = 1;
+                stack.push([a, maxI]);
+                stack.push([maxI, b]);
+            }
+        }
+        const out = [];
+        for (let i = 0; i < n; i++) if (keep[i]) out.push(pts[i]);
+        return out;
+    }
+
+    /**
+     * 闭合折线简化：先以「距起点最远的点」拆成两段，分别 DP 再拼接，
+     * 避免闭合轮廓首尾同点导致的退化（DP 对闭合路径直接使用会把整条轮廓压成一条线）
+     */
+    function douglasPeuckerClosed(pts, tol) {
+        const n = pts.length;
+        if (n < 4) return pts.slice();
+        let far = 0;
+        let maxD = -1;
+        for (let i = 1; i < n; i++) {
+            const dx = pts[i].x - pts[0].x;
+            const dy = pts[i].y - pts[0].y;
+            const d = dx * dx + dy * dy;
+            if (d > maxD) {
+                maxD = d;
+                far = i;
+            }
+        }
+        if (far <= 0) return pts.slice();
+        const seg1 = douglasPeucker(pts.slice(0, far + 1), tol);
+        const seg2 = douglasPeucker(pts.slice(far).concat([pts[0]]), tol);
+        // 拼接：seg1 末点 == seg2 首点，去掉重复
+        return seg1.concat(seg2.slice(1, seg2.length - 1));
+    }
+
+    /**
+     * 按最大点距等分插值：Douglas-Peucker 会把长直边压成两点，
+     * 这里补插中间点，使点距落入参考样例的 0.02~0.6mm 区间
+     * @param {Array<{x:number,y:number}>} pts
+     * @param {number} maxSeg 最大点距（与坐标同单位）
+     */
+    function resamplePolyline(pts, maxSeg) {
+        if (!(maxSeg > 0) || !pts || pts.length < 2) return pts ? pts.slice() : [];
+        const out = [pts[0]];
+        for (let i = 1; i < pts.length; i++) {
+            const a = pts[i - 1];
+            const b = pts[i];
+            const d = Math.hypot(b.x - a.x, b.y - a.y);
+            const n = Math.max(1, Math.ceil(d / maxSeg));
+            for (let k = 1; k <= n; k++) {
+                if (k === n) {
+                    out.push({ x: b.x, y: b.y });
+                } else {
+                    const t = k / n;
+                    out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+                }
+            }
+        }
+        return out;
+    }
+
+    /* =========================================================
+       8. 文字转轨迹（矢量轮廓 / 扫描填充）
+       ========================================================= */
+
+    /**
+     * 离屏渲染文字为高分辨率二值掩码（4x 超采样）
+     * @returns {{W:number,H:number,SS:number,alpha:Uint8Array,size:number}|null}
+     */
+    function renderTextMask(text, sizeMm, family) {
+        const SS = SUPERSAMPLE;
+        const W = SIZE * SS;
+        const off = document.createElement('canvas');
+        off.width = W;
+        off.height = W;
+        const octx = off.getContext('2d');
+        if (!octx) return null;
+
+        const maxW = SIZE - LETTERBOX * 2;
+        const maxH = SIZE - LETTERBOX * 2;
+        let size = clamp(Number(sizeMm) || 48, 4, SIZE);
+
+        octx.font = '600 ' + size + 'px ' + family;
+        const rawW = octx.measureText(text).width || size;
+        if (rawW > maxW) size = size * (maxW / rawW);
+        if (size > maxH) size = maxH;
+
+        octx.setTransform(SS, 0, 0, SS, 0, 0);
+        octx.clearRect(0, 0, SIZE, SIZE);
+        octx.font = '600 ' + size + 'px ' + family;
+        octx.textAlign = 'center';
+        octx.textBaseline = 'middle';
+        octx.fillStyle = '#000000';
+        octx.fillText(text, SIZE / 2, SIZE / 2);
+
+        const data = octx.getImageData(0, 0, W, W).data;
+        const total = W * W;
+        const alpha = new Uint8Array(total);
+        for (let i = 0; i < total; i++) {
+            alpha[i] = data[i * 4 + 3] > 128 ? 1 : 0;
+        }
+        return { W: W, H: W, SS: SS, alpha: alpha, size: size };
+    }
+
+    /**
+     * 掩码矢量化：墨迹连通块外轮廓 + 内部孔洞轮廓
+     * @param {{W:number,H:number,SS:number,alpha:Uint8Array}} mask 二值掩码
+     * @param {number} tolMm    Douglas-Peucker 容差（mm）
+     * @param {number} minArea  最小轮廓面积（mm²），低于该值视为噪点丢弃
+     * @returns {Array<Array<{x:number,y:number}>>} mm 坐标闭合折线（首尾不重复）
+     */
+    function vectorizeMask(mask, tolMm, minArea) {
+        const W = mask.W;
+        const H = mask.H;
+        const SS = mask.SS;
+        const alpha = mask.alpha;
+        const minA = Math.max(0, Number(minArea) || 0);
+        const tol = Math.max(0, Number(tolMm) || 0);
+
+        /** 像素轮廓 → mm 闭合折线：面积过滤 + 闭合简化 */
+        function pushContour(list, raw) {
+            if (!raw || raw.length < 8) return;
+            const mm = [];
+            for (let i = 0; i < raw.length; i++) {
+                mm.push({
+                    x: clamp(raw[i][0] / SS, 0, SIZE),
+                    y: clamp(raw[i][1] / SS, 0, SIZE)
+                });
+            }
+            if (Math.abs(polyArea(mm)) < minA) return;
+            const simp = douglasPeuckerClosed(mm, tol);
+            if (simp.length < 3) return;
+            // 显式闭合后重采样，保证「末点→起点」的收口段同样满足最大点距
+            const closed = simp.concat([{ x: simp[0].x, y: simp[0].y }]);
+            const dense = resamplePolyline(closed, MAX_SEG_LEN).slice(0, -1);
+            if (dense.length < 3) return;
+            list.push(dense);
+        }
+
+        // ① 与画布边缘连通的背景（用于区分"外部背景"与"孔洞"）
+        const outside = new Uint8Array(W * H);
+        const bg = [];
+        for (let x = 0; x < W; x++) {
+            const top = x;
+            const bot = (H - 1) * W + x;
+            if (!alpha[top] && !outside[top]) { outside[top] = 1; bg.push(top); }
+            if (!alpha[bot] && !outside[bot]) { outside[bot] = 1; bg.push(bot); }
+        }
+        for (let y = 0; y < H; y++) {
+            const l = y * W;
+            const r = y * W + W - 1;
+            if (!alpha[l] && !outside[l]) { outside[l] = 1; bg.push(l); }
+            if (!alpha[r] && !outside[r]) { outside[r] = 1; bg.push(r); }
+        }
+        while (bg.length) {
+            const p = bg.pop();
+            const px = p % W;
+            const py = (p - px) / W;
+            if (px > 0) { const q = p - 1; if (!alpha[q] && !outside[q]) { outside[q] = 1; bg.push(q); } }
+            if (px < W - 1) { const q = p + 1; if (!alpha[q] && !outside[q]) { outside[q] = 1; bg.push(q); } }
+            if (py > 0) { const q = p - W; if (!alpha[q] && !outside[q]) { outside[q] = 1; bg.push(q); } }
+            if (py < H - 1) { const q = p + W; if (!alpha[q] && !outside[q]) { outside[q] = 1; bg.push(q); } }
+        }
+
+        const maxSteps = W * H * 3;
+        const contours = [];
+
+        // ② 墨迹连通块 → 每块追踪一次外轮廓
+        const inkSeen = new Uint8Array(W * H);
+        for (let start = 0; start < W * H; start++) {
+            if (!alpha[start] || inkSeen[start]) continue;
+            const comp = [];
+            const st = [start];
+            inkSeen[start] = 1;
+            let sx = W;
+            let sy = H;
+            while (st.length) {
+                const p = st.pop();
+                comp.push(p);
+                const px = p % W;
+                const py = (p - px) / W;
+                if (py < sy || (py === sy && px < sx)) { sy = py; sx = px; }
+                if (px > 0) { const q = p - 1; if (alpha[q] && !inkSeen[q]) { inkSeen[q] = 1; st.push(q); } }
+                if (px < W - 1) { const q = p + 1; if (alpha[q] && !inkSeen[q]) { inkSeen[q] = 1; st.push(q); } }
+                if (py > 0) { const q = p - W; if (alpha[q] && !inkSeen[q]) { inkSeen[q] = 1; st.push(q); } }
+                if (py < H - 1) { const q = p + W; if (alpha[q] && !inkSeen[q]) { inkSeen[q] = 1; st.push(q); } }
+            }
+            const raw = mooreTrace(function (tx, ty) { return alpha[ty * W + tx] === 1; }, sx, sy, W, H, maxSteps);
+            pushContour(contours, raw);
+        }
+
+        // ③ 孔洞（被墨迹包围的透明区域）→ 同样输出闭合轮廓，描边后字形中空可见
+        const holeSeen = new Uint8Array(W * H);
+        for (let start = 0; start < W * H; start++) {
+            if (alpha[start] || outside[start] || holeSeen[start]) continue;
+            const st = [start];
+            holeSeen[start] = 1;
+            let sx = W;
+            let sy = H;
+            while (st.length) {
+                const p = st.pop();
+                const px = p % W;
+                const py = (p - px) / W;
+                if (py < sy || (py === sy && px < sx)) { sy = py; sx = px; }
+                if (px > 0) { const q = p - 1; if (!alpha[q] && !outside[q] && !holeSeen[q]) { holeSeen[q] = 1; st.push(q); } }
+                if (px < W - 1) { const q = p + 1; if (!alpha[q] && !outside[q] && !holeSeen[q]) { holeSeen[q] = 1; st.push(q); } }
+                if (py > 0) { const q = p - W; if (!alpha[q] && !outside[q] && !holeSeen[q]) { holeSeen[q] = 1; st.push(q); } }
+                if (py < H - 1) { const q = p + W; if (!alpha[q] && !outside[q] && !holeSeen[q]) { holeSeen[q] = 1; st.push(q); } }
+            }
+            const raw = mooreTrace(function (tx, ty) {
+                const q = ty * W + tx;
+                return alpha[q] === 0 && outside[q] === 0;
+            }, sx, sy, W, H, maxSteps);
+            pushContour(contours, raw);
+        }
+
+        return contours;
+    }
+
+    /**
+     * 文字 → 矢量轮廓笔画（mm 坐标闭合折线，末尾已补回起点以闭合）
+     */
+    function buildTextContours(text, sizeMm, family, tolMm, minArea) {
+        const mask = renderTextMask(text, sizeMm, family);
+        if (!mask) return [];
+        return vectorizeMask(mask, tolMm, minArea).map(function (c) {
+            const pts = c.slice();
+            if (pts.length) pts.push({ x: pts[0].x, y: pts[0].y });
+            return pts;
+        });
+    }
 
     /**
      * 把文字转成扫描线笔画
@@ -1009,7 +1498,7 @@
         return segments;
     }
 
-    /** 生成文字轨迹并加入画布 */
+    /** 生成文字轨迹并加入画布（按「轨迹模式」分流：轮廓描边 / 扫描填充） */
     function addTextStrokes() {
         const text = (textInput.value || '').trim();
         if (!text) {
@@ -1018,11 +1507,18 @@
         }
         const family = fontSelect.value;
         const sizeMm = parseFloat(fontSize.value) || 48;
+        const isContour = traceMode.value !== 'scan';
+        const tol = clamp(parseFloat(simplifyTolInput.value) || SIMPLIFY_TOL, 0.02, 2);
+        const minA = clamp(parseFloat(minAreaInput.value) || 0, 0, 50);
         const step = parseInt(scanStep.value, 10) || 2;
 
-        const segments = buildTextStrokes(text, sizeMm, family, step);
+        const segments = isContour
+            ? buildTextContours(text, sizeMm, family, tol, minA)
+            : buildTextStrokes(text, sizeMm, family, step);
         if (!segments.length) {
-            showHint(boardHint, 'err', '未能从文字中提取到笔画像素，请更换字体或调大字号后重试。');
+            showHint(boardHint, 'err', isContour
+                ? '未从文字中提取到有效轮廓，可尝试减小「最小轮廓面积」、增大「轨迹简化精度」或调大字号后重试。'
+                : '未能从文字中提取到笔画像素，请更换字体或调大字号后重试。');
             return;
         }
 
@@ -1040,10 +1536,13 @@
         // 先做统一收尾（内部会刷新「当前画布」提示），随后用更具体的文字轨迹提示覆盖
         afterBoardChange();
         const info = measureStrokes();
+        const modeTip = isContour
+            ? '（矢量轮廓，简化精度 ' + tol.toFixed(2) + ' mm）'
+            : '（扫描填充，步长 ' + step + '）';
         if (segments.length > MAX_TEXT_STROKES) {
-            showHint(boardHint, 'warn', '文字已生成 ' + segments.length + ' 段轨迹（数量较多，G-code 行数会变大），可调大「扫描精度」数值以减少笔数；当前画布共 ' + info.strokes + ' 笔 / ' + info.points + ' 点。');
+            showHint(boardHint, 'warn', '文字已生成 ' + segments.length + ' 段轨迹' + modeTip + '（数量较多，G-code 行数会变大），可调大「' + (isContour ? '轮廓简化精度' : '扫描精度') + '」数值以减少笔数；当前画布共 ' + info.strokes + ' 笔 / ' + info.points + ' 点。');
         } else {
-            showHint(boardHint, 'ok', '已生成文字轨迹「' + text + '」：' + segments.length + ' 段（描边示意，精度受字号与扫描步长影响）；当前画布共 ' + info.strokes + ' 笔 / ' + info.points + ' 点。');
+            showHint(boardHint, 'ok', '已生成文字轨迹「' + text + '」：' + segments.length + ' 段' + modeTip + '；当前画布共 ' + info.strokes + ' 笔 / ' + info.points + ' 点。');
         }
     }
 
@@ -1052,20 +1551,46 @@
        ========================================================= */
 
     function buildAndRender(auto) {
-        const speed = parseInt(speedInput.value, 10) || 1500;
-        speedView.value = 'F' + Math.round(clamp(speed, 100, 12000));
+        const drawF = parseInt(speedInput.value, 10) || DRAW_F;
+        const travelF = parseInt(travelSpeedInput.value, 10) || TRAVEL_F;
+        const zF = parseInt(zSpeedInput.value, 10) || Z_F;
+        const penDownZ = parseFloat(penDownZInput.value) || PEN_DOWN_Z;
+        const penUpZ = parseFloat(penUpZInput.value) || PEN_UP_Z;
+        speedView.value = 'F' + Math.round(clamp(drawF, 100, 12000));
 
-        const result = buildGcode(state.strokes, { speed: speed });
-        state.gcode = result.text;
+        const result = buildGcode(state.strokes, {
+            drawF: drawF,
+            travelF: travelF,
+            zF: zF,
+            penDownZ: penDownZ,
+            penUpZ: penUpZ
+        });
         state.lastStats = result.stats;
-        state.generated = true;
 
-        // 预览与统计（预览文本即下载内容）
-        preview.value = result.text;
+        // 统计照常展示（安全校验未通过时，数据依然可读，便于排查）
         statStrokes.textContent = String(result.stats.strokes);
         statPoints.textContent = String(result.stats.points);
         statLength.textContent = result.stats.length.toFixed(1) + ' mm';
         statTime.textContent = formatDuration(result.stats.seconds);
+
+        // 收尾安全校验未通过 → 强制禁用下载、清空预览并红字说明原因
+        if (!result.safe) {
+            state.gcode = '';
+            state.generated = false;
+            preview.value = '';
+            preview.placeholder = '安全校验未通过，已阻止导出';
+            btnDownload.disabled = true;
+            showHint(genHint, 'err', '安全校验未通过：' + (result.guardReason || '末尾两行不符合约定') +
+                '。为防止打印机物理撞机，已阻止导出。');
+            return result;
+        }
+
+        state.gcode = result.text;
+        state.generated = true;
+
+        // 预览与统计（预览文本即下载内容）
+        preview.value = result.text;
+        preview.placeholder = '点击「生成 G-code」后在此预览完整文本…';
         btnDownload.disabled = false;
 
         if (!auto) {
@@ -1074,7 +1599,8 @@
             } else if (result.stats.overflow > 0) {
                 showHint(genHint, 'warn', '已生成 ' + result.stats.lines + ' 行，其中 ' + result.stats.overflow + ' 个点超出 0~256 范围，已钳制到边界。');
             } else {
-                showHint(genHint, 'ok', '已生成 ' + result.stats.lines + ' 行 G-code：' + result.stats.strokes + ' 笔 / ' + result.stats.points + ' 点，坐标均在 0~256 内。');
+                showHint(genHint, 'ok', '已生成 ' + result.stats.lines + ' 行 G-code：' + result.stats.strokes + ' 笔 / ' + result.stats.points + ' 点，Z 抬落笔 ' + result.stats.zMoves + ' 次（落笔 ' +
+                    result.stats.penDownZ.toFixed(1) + ' / 抬笔 ' + result.stats.penUpZ.toFixed(1) + '），坐标均在 0~256 内。');
             }
         }
         return result;
@@ -1085,6 +1611,17 @@
         const text = preview.value;
         if (!text) {
             showHint(genHint, 'warn', '请先点击「生成 G-code」，预览区有内容后才能下载。');
+            return;
+        }
+        // 下载前对"即将落盘的真实文本"再跑一次收尾安全校验（双保险，不信任中间态）
+        const recheck = guardTailSafe(text.split('\n'));
+        if (!recheck.ok) {
+            btnDownload.disabled = true;
+            showHint(genHint, 'err', '安全校验未通过：' + recheck.reason + '。为防止打印机物理撞机，已阻止导出。');
+            return;
+        }
+        if (!state.generated) {
+            showHint(genHint, 'err', '当前 G-code 未通过收尾安全校验，已阻止导出（防止打印机物理撞机）。');
             return;
         }
         const fileName = buildFileName(new Date());
@@ -1178,9 +1715,15 @@
         buildAndRender(false);
     });
     btnDownload.addEventListener('click', downloadGcode);
-    speedInput.addEventListener('change', function () {
-        speedView.value = 'F' + Math.round(clamp(parseInt(speedInput.value, 10) || 1500, 100, 12000));
-        if (state.generated) buildAndRender(true);
+    // G-code 参数联动：任一参数变化后，若已有生成结果则按新参数静默重算
+    [speedInput, travelSpeedInput, zSpeedInput, penDownZInput, penUpZInput].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('change', function () {
+            if (el === speedInput) {
+                speedView.value = 'F' + Math.round(clamp(parseInt(speedInput.value, 10) || DRAW_F, 100, 12000));
+            }
+            if (state.generated) buildAndRender(true);
+        });
     });
 
     // 回车快速生成文字轨迹
@@ -1207,12 +1750,33 @@
     window.WriterTool = {
         buildGcode: buildGcode,
         finalizeTail: finalizeTail,
+        guardTailSafe: guardTailSafe,
+        buildTextStrokes: buildTextStrokes,
+        buildTextContours: buildTextContours,
+        renderTextMask: renderTextMask,
+        vectorizeMask: vectorizeMask,
+        mooreTrace: mooreTrace,
+        douglasPeucker: douglasPeucker,
+        douglasPeuckerClosed: douglasPeuckerClosed,
+        resamplePolyline: resamplePolyline,
+        polyArea: polyArea,
         buildFileName: buildFileName,
         formatDuration: formatDuration,
         clamp: clamp,
         SIZE: SIZE,
         HEAD_LINES: HEAD_LINES,
-        INIT_LINES: INIT_LINES
+        INIT_LINES: INIT_LINES,
+        TAIL_EXPECT: TAIL_EXPECT,
+        FORBIDDEN_RE: FORBIDDEN_RE,
+        PEN_DOWN_Z: PEN_DOWN_Z,
+        PEN_UP_Z: PEN_UP_Z,
+        DRAW_F: DRAW_F,
+        TRAVEL_F: TRAVEL_F,
+        Z_F: Z_F,
+        SIMPLIFY_TOL: SIMPLIFY_TOL,
+        MIN_CONTOUR_AREA: MIN_CONTOUR_AREA,
+        SUPERSAMPLE: SUPERSAMPLE,
+        MAX_SEG_LEN: MAX_SEG_LEN
     };
 })();
 </script>
