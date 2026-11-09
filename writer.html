@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>写字机工具 · 灵感工坊</title>
+    <style>
+        /* =========================================================
+           0. 基础重置（仅限定盒模型，不使用宽泛元素选择器，避免全局污染）
+           ========================================================= */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f7fb;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1a2c3e;
+        }
+
+        /* =========================================================
+           1. 导航栏（与 index.html 完全同构）
+           ========================================================= */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
+            padding: 12px 28px;
+            z-index: 100;
+        }
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #07C160 0%, #059e4a 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #2c3e4e;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .nav-links a:hover { color: #07C160; }
+        /* 当前页高亮态 */
+        .nav-links a.active { color: #07C160; font-weight: 700; }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #07C160;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* =========================================================
+           2. 顶部横幅（沿用首页 hero 渐变语言，高度收敛）
+           ========================================================= */
+        .hero {
+            background: linear-gradient(135deg, #e8f5e9 0%, #d4e8d4 100%);
+            padding: 44px 28px;
+            text-align: center;
+        }
+        .hero h1 { font-size: 2.2rem; margin: 0 0 12px; }
+        .hero p { color: #4a5b6e; max-width: 640px; margin: 0 auto; font-size: 0.9rem; line-height: 1.6; }
+
+        /* =========================================================
+           3. 工作区布局（左画板 / 右生成与预览）
+           ========================================================= */
+        .workspace {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 28px 28px 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* 卡片：复用首页 .card 视觉规范 */
+        .wk-card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 0.5px solid #e9edf2;
+        }
+        .wk-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12);
+        }
+        .wk-card + .wk-card { margin-top: 24px; }
+        .wk-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0 0 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .wk-sub {
+            font-size: 0.72rem;
+            color: #7e8c9e;
+            line-height: 1.5;
+            margin: 0 0 14px;
+        }
+        .tag {
+            background: #eef2f5;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #2c3e4e;
+            white-space: nowrap;
+        }
+
+        /* =========================================================
+           4. 画布区
+           ========================================================= */
+        .wk-board-wrap {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 0.5px solid #e9edf2;
+            background: #ffffff;
+        }
+        #board {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            touch-action: none;           /* 触摸拖动时禁止页面滚动，保证绘制连续 */
+            cursor: crosshair;
+            background: #ffffff;
+        }
+
+        /* =========================================================
+           5. 工具栏
+           ========================================================= */
+        .wk-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+        .wk-field { display: flex; flex-direction: column; gap: 6px; }
+        .wk-label {
+            font-size: 0.7rem;
+            color: #7e8c9e;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .wk-label b { color: #07C160; font-weight: 600; }
+
+        .wk-input, .wk-select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            border: 0.5px solid #e9edf2;
+            background: #fbfcfe;
+            font-family: inherit;
+            font-size: 0.82rem;
+            color: #1a2c3e;
+            transition: 0.2s;
+        }
+        .wk-input:focus, .wk-select:focus {
+            outline: none;
+            border-color: #07C160;
+            box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.12);
+        }
+        .wk-range {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 4px;
+            background: #e9edf2;
+            outline: none;
+            margin: 12px 0 6px;
+        }
+        .wk-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #07C160;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(7, 193, 96, 0.4);
+            transition: 0.2s;
+        }
+        .wk-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
+        .wk-range::-moz-range-thumb {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #07C160; border: 2px solid #fff; cursor: pointer;
+        }
+        .wk-color {
+            width: 100%;
+            height: 40px;
+            padding: 3px;
+            border-radius: 16px;
+            border: 0.5px solid #e9edf2;
+            background: #fbfcfe;
+            cursor: pointer;
+        }
+
+        .wk-switches {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+        .wk-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 30px;
+            background: #eef2f5;
+            font-size: 0.75rem;
+            color: #2c3e4e;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.2s;
+        }
+        .wk-switch:hover { background: #e3e9ef; }
+        .wk-switch input { accent-color: #07C160; width: 14px; height: 14px; margin: 0; cursor: pointer; }
+
+        /* =========================================================
+           6. 按钮
+           ========================================================= */
+        .wk-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .wk-btn {
+            border: 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 11px 20px;
+            border-radius: 40px;
+            transition: all 0.25s;
+            background: #eef2f5;
+            color: #2c3e4e;
+        }
+        .wk-btn:hover { background: #e3e9ef; transform: translateY(-2px); }
+        .wk-btn:active { transform: translateY(0); }
+        .wk-btn-main {
+            background: #07C160;
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(7, 193, 96, 0.22);
+        }
+        .wk-btn-main:hover { background: #059e4a; box-shadow: 0 12px 24px rgba(7, 193, 96, 0.28); }
+        .wk-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* =========================================================
+           7. 统计信息
+           ========================================================= */
+        .wk-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+            gap: 10px;
+            margin: 14px 0;
+        }
+        .wk-stat {
+            background: #f8fafc;
+            border: 0.5px solid #e9edf2;
+            border-radius: 18px;
+            padding: 10px 14px;
+        }
+        .wk-stat .k { font-size: 0.65rem; color: #7e8c9e; }
+        .wk-stat .v { font-size: 1rem; font-weight: 700; margin-top: 2px; color: #1a2c3e; }
+
+        /* =========================================================
+           8. 预览区
+           ========================================================= */
+        .wk-preview {
+            width: 100%;
+            min-height: 280px;
+            max-height: 380px;
+            resize: vertical;
+            padding: 14px;
+            border-radius: 20px;
+            border: 0.5px solid #e9edf2;
+            background: #fbfcfe;
+            color: #2c3e4e;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+            font-size: 0.72rem;
+            line-height: 1.65;
+            white-space: pre;
+            overflow: auto;
+        }
+        .wk-preview:focus { outline: none; border-color: #07C160; }
+
+        /* 状态提示条 */
+        .wk-hint {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 0.74rem;
+            line-height: 1.5;
+            background: #f1f8f4;
+            color: #059e4a;
+            border: 0.5px solid rgba(7, 193, 96, 0.25);
+        }
+        .wk-hint.show { display: block; }
+        .wk-hint.warn { background: #fff8e8; color: #b87407; border-color: rgba(230, 160, 20, 0.35); }
+        .wk-hint.err { background: #fdf1f2; color: #c0392b; border-color: rgba(192, 57, 43, 0.25); }
+
+        /* =========================================================
+           9. 页脚
+           ========================================================= */
+        footer {
+            text-align: center;
+            padding: 40px 24px;
+            color: #8a99b0;
+            font-size: 0.75rem;
+            border-top: 0.5px solid #e2e8f0;
+            margin-top: 48px;
+            line-height: 1.8;
+        }
+        footer a { color: #07C160; text-decoration: none; }
+
+        /* =========================================================
+           10. 响应式（沿用首页 680px 断点）
+           ========================================================= */
+        @media (max-width: 1080px) {
+            .workspace { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 680px) {
+            .navbar { padding: 12px 16px; }
+            .hero { padding: 32px 16px; }
+            .hero h1 { font-size: 1.5rem; }
+            .workspace { padding: 16px 16px 0; gap: 16px; }
+            .wk-card { padding: 16px; border-radius: 24px; }
+            .wk-tools { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .wk-actions .wk-btn { flex: 1 1 auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================ 导航栏（与首页同构） ============================ -->
+<nav class="navbar">
+    <div class="nav-inner">
+        <div class="logo">🎨 灵感工坊</div>
+        <div class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="material.html">素材库</a>
+            <a href="writer.html" class="active">写字机工具</a>
+            <a href="privacy.html">隐私政策</a>
+            <div id="userSection">
+                <a href="login.html" id="loginLink">登录/注册</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ============================ 顶部横幅 ============================ -->
+<section class="hero">
+    <h1>✍️ 写字机工具</h1>
+    <p>手绘或输入文字 → 生成 Bambu P1S 256×256 热床轨迹 → 下载可直接使用的 G-code 文件</p>
+</section>
+
+<!-- ============================ 工作区 ============================ -->
+<main class="workspace">
+
+    <!-- ---------------- 左：画板 ---------------- -->
+    <section class="wk-card">
+        <h2 class="wk-title">
+            <span>🖋️ 绘制画板（256 × 256 mm）</span>
+            <span class="tag">原点左上</span>
+        </h2>
+        <p class="wk-sub">按住鼠标或手指拖动即可绘制；坐标单位为毫米，重点参考画面左上角的 0,0 与绿色边界框。</p>
+
+        <div class="wk-board-wrap">
+            <canvas id="board"></canvas>
+        </div>
+
+        <!-- 画笔与显示设置 -->
+        <div class="wk-tools">
+            <div class="wk-field">
+                <label class="wk-label" for="brushSize">画笔粗细 <b id="brushSizeVal">2.0 mm</b></label>
+                <input class="wk-range" type="range" id="brushSize" min="0.5" max="8" step="0.5" value="2">
+            </div>
+            <div class="wk-field">
+                <label class="wk-label" for="brushColor">画笔颜色 <b>仅显示</b></label>
+                <input class="wk-color" type="color" id="brushColor" value="#1a2c3e">
+            </div>
+        </div>
+
+        <div class="wk-switches">
+            <label class="wk-switch"><input type="checkbox" id="chkGrid" checked> 显示网格</label>
+            <label class="wk-switch"><input type="checkbox" id="chkOrigin" checked> 原点标记 0,0</label>
+            <label class="wk-switch"><input type="checkbox" id="chkBorder" checked> 256×256 边界框</label>
+        </div>
+
+        <div class="wk-actions">
+            <button class="wk-btn wk-btn-main" id="btnUndo" type="button">↶ 撤销上一笔</button>
+            <button class="wk-btn" id="btnClear" type="button">🗑️ 清空画布</button>
+        </div>
+
+        <div class="wk-hint" id="boardHint"></div>
+    </section>
+
+    <!-- ---------------- 右：文字 / 生成 / 预览 ---------------- -->
+    <div>
+        <!-- 文字轨迹 -->
+        <section class="wk-card">
+            <h2 class="wk-title">
+                <span>🔤 文字轨迹</span>
+                <span class="tag">描边示意</span>
+            </h2>
+            <p class="wk-sub">用系统字体离屏渲染文字后逐行扫描像素生成笔画，不依赖任何网络字体；文字自动居中，超出 256×256 会自动等比缩放。</p>
+
+            <div class="wk-tools">
+                <div class="wk-field" style="grid-column: 1 / -1;">
+                    <label class="wk-label" for="textInput">文字内容</label>
+                    <input class="wk-input" id="textInput" type="text" maxlength="40" placeholder="例如：你好世界 / Hello">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="fontSize">字号（mm）</label>
+                    <input class="wk-input" id="fontSize" type="number" min="8" max="200" step="1" value="48">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="fontSelect">字体</label>
+                    <select class="wk-select" id="fontSelect">
+                        <option value="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Microsoft YaHei&quot;, sans-serif">系统默认</option>
+                        <option value="&quot;Microsoft YaHei&quot;, &quot;PingFang SC&quot;, sans-serif">微软雅黑 / 苹方</option>
+                        <option value="&quot;SimHei&quot;, &quot;Heiti SC&quot;, sans-serif">黑体</option>
+                        <option value="&quot;SimSun&quot;, &quot;Songti SC&quot;, serif">宋体</option>
+                        <option value="&quot;KaiTi&quot;, &quot;STKaiti&quot;, serif">楷体</option>
+                        <option value="Georgia, &quot;Times New Roman&quot;, serif">Georgia 衬线</option>
+                        <option value="Arial, Helvetica, sans-serif">Arial</option>
+                    </select>
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="scanStep">扫描精度 <b id="scanStepVal">2</b></label>
+                    <input class="wk-range" type="range" id="scanStep" min="1" max="4" step="1" value="2">
+                </div>
+            </div>
+
+            <div class="wk-actions">
+                <button class="wk-btn wk-btn-main" id="btnText" type="button">生成文字轨迹</button>
+            </div>
+        </section>
+
+        <!-- G-code 生成与预览 -->
+        <section class="wk-card">
+            <h2 class="wk-title">
+                <span>⚙️ G-code 生成</span>
+                <span class="tag">Bambu P1S · 256×256</span>
+            </h2>
+            <p class="wk-sub">生成的文本会先在开头插入 M104 S0 / M140 S0 / M630 S0 P0，末尾固定为 G1 Z8.0 F1000 与 G0 X0 Y0。</p>
+
+            <div class="wk-tools">
+                <div class="wk-field">
+                    <label class="wk-label" for="speed">绘制速度（mm/min）</label>
+                    <input class="wk-input" id="speed" type="number" min="100" max="12000" step="100" value="1500">
+                </div>
+                <div class="wk-field">
+                    <label class="wk-label" for="speedView">当前速度</label>
+                    <input class="wk-input" id="speedView" type="text" value="F1500" readonly>
+                </div>
+            </div>
+
+            <div class="wk-actions">
+                <button class="wk-btn wk-btn-main" id="btnBuild" type="button">生成 G-code</button>
+                <button class="wk-btn" id="btnDownload" type="button" disabled>⬇ 下载处理好的 G-code</button>
+            </div>
+
+            <div class="wk-stats">
+                <div class="wk-stat"><div class="k">笔画数</div><div class="v" id="statStrokes">0</div></div>
+                <div class="wk-stat"><div class="k">总点数</div><div class="v" id="statPoints">0</div></div>
+                <div class="wk-stat"><div class="k">路径长度</div><div class="v" id="statLength">0 mm</div></div>
+                <div class="wk-stat"><div class="k">估算时长</div><div class="v" id="statTime">0 秒</div></div>
+            </div>
+
+            <label class="wk-label" for="preview" style="margin-bottom: 6px;">G-code 预览（只读）</label>
+            <textarea class="wk-preview" id="preview" readonly spellcheck="false" placeholder="点击「生成 G-code」后在此预览完整文本…"></textarea>
+
+            <div class="wk-hint" id="genHint"></div>
+        </section>
+    </div>
+</main>
+
+<!-- ============================ 页脚 ============================ -->
+<footer>
+    <p>© 2026 灵感工坊 · 写字机工具</p>
+    <p style="margin-top: 8px;">纯前端本地生成，不上传任何数据、不连接打印机端口 · <a href="privacy.html">隐私政策</a></p>
+</footer>
+
+<script>
+(function () {
+    'use strict';
+
+    /* =========================================================
+       1. 常量定义
+       ========================================================= */
+    const SIZE = 256;                       // 热床逻辑尺寸（mm），坐标范围 0 ~ 256
+    const HEAD_LINES = ['M104 S0', 'M140 S0', 'M630 S0 P0'];   // 开头固定三行
+    const INIT_LINES = ['G21', 'G90', 'G1 Z5 F1000'];          // 基础设置与安全抬升
+    const TAIL_LIFT = 'G1 Z8.0 F1000';      // 末行替换目标之一
+    const TAIL_HOME = 'G0 X0 Y0';           // 末尾最后一行
+    const TRAVEL_SPEED = 3000;              // 空移速度（mm/min，仅用于估算时长）
+    const PEN_DELAY_SEC = 0.8;              // 每笔抬落笔的时间估算（秒）
+    const LETTERBOX = 12;                   // 文字距边界的最小留白（mm）
+    const MAX_TEXT_STROKES = 1200;          // 文字轨迹笔画数提示阈值
+
+    /* =========================================================
+       2. 运行状态
+       ========================================================= */
+    const state = {
+        strokes: [],        // 轨迹笔画：[{ points:[{x,y}], width, color }]
+        groupStack: [],     // 撤销分组栈：记录每组的起始下标
+        current: null,      // 正在绘制的笔画
+        gcode: '',          // 最近一次生成的 G-code 文本
+        generated: false,   // 是否已生成过（用于自动同步）
+        lastStats: null
+    };
+
+    const view = { scale: 1, dpr: 1 };      // 逻辑单位 → 设备像素的缩放比
+
+    /* =========================================================
+       3. DOM 引用
+       ========================================================= */
+    const board = document.getElementById('board');
+    const ctx = board.getContext('2d');
+    const brushSize = document.getElementById('brushSize');
+    const brushSizeVal = document.getElementById('brushSizeVal');
+    const brushColor = document.getElementById('brushColor');
+    const chkGrid = document.getElementById('chkGrid');
+    const chkOrigin = document.getElementById('chkOrigin');
+    const chkBorder = document.getElementById('chkBorder');
+    const btnUndo = document.getElementById('btnUndo');
+    const btnClear = document.getElementById('btnClear');
+    const boardHint = document.getElementById('boardHint');
+    const textInput = document.getElementById('textInput');
+    const fontSize = document.getElementById('fontSize');
+    const fontSelect = document.getElementById('fontSelect');
+    const scanStep = document.getElementById('scanStep');
+    const scanStepVal = document.getElementById('scanStepVal');
+    const btnText = document.getElementById('btnText');
+    const speedInput = document.getElementById('speed');
+    const speedView = document.getElementById('speedView');
+    const btnBuild = document.getElementById('btnBuild');
+    const btnDownload = document.getElementById('btnDownload');
+    const preview = document.getElementById('preview');
+    const genHint = document.getElementById('genHint');
+    const statStrokes = document.getElementById('statStrokes');
+    const statPoints = document.getElementById('statPoints');
+    const statLength = document.getElementById('statLength');
+    const statTime = document.getElementById('statTime');
+
+    /* =========================================================
+       4. 通用工具函数
+       ========================================================= */
+
+    /** 数值钳制 */
+    function clamp(v, min, max) {
+        return v < min ? min : (v > max ? max : v);
+    }
+
+    /** 提示条展示：kind = ok | warn | err */
+    function showHint(el, kind, text) {
+        el.className = 'wk-hint show' + (kind && kind !== 'ok' ? ' ' + kind : '');
+        el.textContent = text;
+    }
+
+    function hideHint(el) {
+        el.className = 'wk-hint';
+        el.textContent = '';
+    }
+
+    /** 秒 → 可读时长 */
+    function formatDuration(sec) {
+        if (!isFinite(sec) || sec <= 0) return '0 秒';
+        if (sec < 60) return sec.toFixed(0) + ' 秒';
+        const m = Math.floor(sec / 60);
+        const s = Math.round(sec % 60);
+        return m + ' 分 ' + s + ' 秒';
+    }
+
+    /** 两位补零 */
+    function pad2(n) {
+        return n < 10 ? '0' + n : '' + n;
+    }
+
+    /** 生成下载文件名：bambu_export_YYYYMMDD_HHMMSS.gcode */
+    function buildFileName(date) {
+        const d = date || new Date();
+        return 'bambu_export_' +
+            d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' +
+            pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds()) + '.gcode';
+    }
+
+    /* =========================================================
+       5. 纯逻辑区：G-code 构建（与 DOM 无关，便于单独测试）
+       ========================================================= */
+
+    /**
+     * 末尾处理：把最后一行替换为 G1 Z8.0 F1000，再追加 G0 X0 Y0，保证末尾两行固定。
+     * 说明：最后一行若属于「不可丢的正文」（绘制行 G1 X… 或基础设置中的安全抬升行），
+     * 先复制一份接在末尾，再对复制出来的"最后一行"执行替换，
+     * 这样既满足「替换末行、不留空行残留」的规则，也不会吞掉最后一笔轨迹或基础设置骨架。
+     * 若最后一行是遗留的旧指令（例如历史 G-code 里的收尾行），则直接替换掉。
+     */
+    function finalizeTail(lines) {
+        if (!lines.length) {
+            lines.push(TAIL_LIFT);
+        } else {
+            const last = lines[lines.length - 1];
+            const keepBody = /^G1\s+X/i.test(last) || last === INIT_LINES[INIT_LINES.length - 1];
+            if (keepBody) lines.push(last);   // 正文行复制保留
+            lines[lines.length - 1] = TAIL_LIFT;   // 替换最后一行
+        }
+        lines.push(TAIL_HOME);                     // 末尾追加回零
+        return lines;
+    }
+
+    /**
+     * 核心：由轨迹笔画构建完整 G-code 文本
+     * @param {Array} strokes  笔画数组，每笔 { points:[{x,y}, ...] }
+     * @param {Object} opts    { speed: number }
+     * @returns {{text:string, stats:Object}}
+     */
+    function buildGcode(strokes, opts) {
+        const options = opts || {};
+        const speed = Math.round(clamp(Number(options.speed) || 1500, 100, 12000));
+
+        const lines = [];
+        // ① 开头固定三行（自动后处理插入）
+        HEAD_LINES.forEach(function (l) { lines.push(l); });
+        // ② 基础设置行
+        INIT_LINES.forEach(function (l) { lines.push(l); });
+
+        let strokeCount = 0;
+        let pointCount = 0;
+        let drawLen = 0;      // 绘制总长度
+        let travelLen = 0;    // 空移总长度
+        let overflowCount = 0;// 越界点数量（已钳制）
+        let prevEnd = null;
+
+        const list = Array.isArray(strokes) ? strokes : [];
+        list.forEach(function (stroke) {
+            if (!stroke || !stroke.points || stroke.points.length < 2) return; // 单点笔画不参与输出
+            strokeCount++;
+
+            const first = stroke.points[0];
+            let fx = Number(first.x), fy = Number(first.y);
+            if (!isFinite(fx) || !isFinite(fy)) return;
+            if (fx < 0 || fx > SIZE || fy < 0 || fy > SIZE) overflowCount++;
+            fx = clamp(fx, 0, SIZE);
+            fy = clamp(fy, 0, SIZE);
+
+            // 笔间空移
+            if (prevEnd) travelLen += Math.hypot(fx - prevEnd.x, fy - prevEnd.y);
+
+            // 每笔起点用 G0（不挤出）
+            lines.push('G0 X' + fx.toFixed(2) + ' Y' + fy.toFixed(2));
+            pointCount++;
+
+            let lastX = fx;
+            let lastY = fy;
+
+            for (let i = 1; i < stroke.points.length; i++) {
+                const p = stroke.points[i];
+                let x = Number(p.x), y = Number(p.y);
+                if (!isFinite(x) || !isFinite(y)) continue;
+                if (x < 0 || x > SIZE || y < 0 || y > SIZE) overflowCount++;
+                x = clamp(x, 0, SIZE);
+                y = clamp(y, 0, SIZE);
+
+                lines.push('G1 X' + x.toFixed(2) + ' Y' + y.toFixed(2) + ' F' + speed);
+                drawLen += Math.hypot(x - lastX, y - lastY);
+                lastX = x;
+                lastY = y;
+                pointCount++;
+            }
+            prevEnd = { x: lastX, y: lastY };
+        });
+
+        // ③ 末尾：替换最后一行 + 追加回零
+        finalizeTail(lines);
+
+        // ④ 估算时长（绘制 + 空移 + 抬落笔开销）
+        const drawSec = speed > 0 ? (drawLen / speed) * 60 : 0;
+        const travelSec = (travelLen / TRAVEL_SPEED) * 60 + strokeCount * PEN_DELAY_SEC;
+        const estSec = drawSec + travelSec;
+
+        return {
+            text: lines.join('\n'),
+            stats: {
+                lines: lines.length,
+                strokes: strokeCount,
+                points: pointCount,
+                length: drawLen,
+                travel: travelLen,
+                speed: speed,
+                seconds: estSec,
+                overflow: overflowCount
+            }
+        };
+    }
+
+    /* =========================================================
+       6. 画布初始化与渲染
+       ========================================================= */
+
+    /** 初始化画布尺寸（devicePixelRatio 高清处理），完成后重绘 */
+    function initCanvas() {
+        const cssW = board.clientWidth || 480;
+        const dpr = window.devicePixelRatio || 1;
+        board.width = Math.max(1, Math.round(cssW * dpr));
+        board.height = board.width;
+        view.dpr = dpr;
+        view.scale = board.width / SIZE;   // 每 1mm 对应的设备像素数
+        redraw();
+    }
+
+    /** 以逻辑坐标系（0~256 mm）执行绘制动作 */
+    function withLogical(fn) {
+        ctx.setTransform(view.scale, 0, 0, view.scale, 0, 0);
+        fn();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    /** 整屏重绘 */
+    function redraw() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, board.width, board.height);
+
+        withLogical(function () {
+            // 底板
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, SIZE, SIZE);
+
+            if (chkGrid.checked) drawGrid();
+            if (chkBorder.checked) drawBorder();
+            drawStrokes();
+            if (chkOrigin.checked) drawOrigin();
+        });
+    }
+
+    /** 网格参考线（每 16mm 一条，颜色贴近站点灰） */
+    function drawGrid() {
+        const px = 1 / view.scale;         // 1 物理像素对应的逻辑长度
+        ctx.strokeStyle = '#eef2f5';
+        ctx.lineWidth = px;
+        ctx.beginPath();
+        for (let i = 16; i < SIZE; i += 16) {
+            ctx.moveTo(i, 0); ctx.lineTo(i, SIZE);
+            ctx.moveTo(0, i); ctx.lineTo(SIZE, i);
+        }
+        ctx.stroke();
+    }
+
+    /** 256×256 边界框（绿色虚线） */
+    function drawBorder() {
+        const px = 1 / view.scale;
+        ctx.save();
+        ctx.strokeStyle = '#07C160';
+        ctx.lineWidth = px * 1.5;
+        ctx.setLineDash([6 * px, 4 * px]);
+        ctx.strokeRect(px * 0.75, px * 0.75, SIZE - px * 1.5, SIZE - px * 1.5);
+        ctx.restore();
+    }
+
+    /** 左上角原点标记与文字说明 */
+    function drawOrigin() {
+        const px = 1 / view.scale;
+        const arm = 10;                    // 直角引线长度（mm）
+        ctx.save();
+        ctx.strokeStyle = '#ff4d4f';
+        ctx.lineWidth = px * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(arm, 0);
+        ctx.moveTo(0, 0); ctx.lineTo(0, arm);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.fillStyle = '#ff4d4f';
+        ctx.arc(0, 0, px * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 文字大小按物理像素换算，保证视觉大小与画布尺寸无关
+        ctx.font = (11 * px) + 'px -apple-system, "Segoe UI", Roboto, sans-serif';
+        ctx.fillStyle = '#ff4d4f';
+        ctx.textBaseline = 'top';
+        ctx.fillText('0,0 (左上)', 4, 6 * px * 1.6);
+        ctx.restore();
+    }
+
+    /** 绘制全部已记录笔画 */
+    function drawStrokes() {
+        state.strokes.forEach(function (stroke) {
+            const pts = stroke.points;
+            if (!pts || !pts.length) return;
+            if (pts.length === 1) {
+                drawDot(pts[0], stroke.width, stroke.color);
+                return;
+            }
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.stroke();
+        });
+    }
+
+    /** 绘制单个线段的增量渲染（绘制过程中避免整屏重绘） */
+    function drawSegment(a, b, width, color) {
+        withLogical(function () {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+        });
+    }
+
+    /** 绘制单个点（点击未拖动时） */
+    function drawDot(p, width, color) {
+        withLogical(function () {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.max(width, 0.8) / 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    /* =========================================================
+       7. 指针事件（鼠标 + 触摸统一走 Pointer Events）
+       ========================================================= */
+
+    /** 屏幕坐标 → 画布逻辑坐标（0~256，越界钳制） */
+    function toLogical(e) {
+        const rect = board.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * SIZE;
+        const y = ((e.clientY - rect.top) / rect.height) * SIZE;
+        return { x: clamp(x, 0, SIZE), y: clamp(y, 0, SIZE) };
+    }
+
+    function onPointerDown(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;  // 只响应左键
+        e.preventDefault();
+        if (board.setPointerCapture) {
+            try { board.setPointerCapture(e.pointerId); } catch (err) { /* 某些浏览器不支持，忽略 */ }
+        }
+        const p = toLogical(e);
+        const stroke = {
+            points: [p],
+            width: parseFloat(brushSize.value) || 2,
+            color: brushColor.value || '#1a2c3e'
+        };
+        state.groupStack.push(state.strokes.length);
+        state.strokes.push(stroke);
+        state.current = stroke;
+        drawDot(p, stroke.width, stroke.color);
+    }
+
+    function onPointerMove(e) {
+        if (!state.current) return;
+        e.preventDefault();
+        const p = toLogical(e);
+        const pts = state.current.points;
+        const last = pts[pts.length - 1];
+        // 最小间距过滤，避免产生海量冗余点
+        if (Math.abs(p.x - last.x) < 0.25 && Math.abs(p.y - last.y) < 0.25) return;
+        pts.push(p);
+        drawSegment(last, p, state.current.width, state.current.color);
+    }
+
+    function onPointerUp(e) {
+        if (!state.current) return;
+        e.preventDefault();
+        const stroke = state.current;
+        state.current = null;
+        // 单点笔画无实际线段，直接保留以便撤销，但会在生成时被忽略
+        if (stroke.points.length === 1) drawDot(stroke.points[0], stroke.width, stroke.color);
+        afterBoardChange();
+    }
+
+    /** 画布内容变化后的统一收尾：刷新统计、必要时重新生成 */
+    function afterBoardChange() {
+        const info = measureStrokes();
+        if (info.strokes === 0) {
+            hideHint(boardHint);
+        } else {
+            showHint(boardHint, 'ok', '当前画布：' + info.strokes + ' 笔 · ' + info.points + ' 个点 · 路径约 ' + info.length.toFixed(1) + ' mm');
+        }
+        if (state.generated) buildAndRender(true);
+    }
+
+    /** 快速统计笔画数量与点数、长度 */
+    function measureStrokes() {
+        let strokes = 0, points = 0, length = 0;
+        state.strokes.forEach(function (s) {
+            if (!s.points || s.points.length < 2) return;
+            strokes++;
+            points += s.points.length;
+            for (let i = 1; i < s.points.length; i++) {
+                length += Math.hypot(s.points[i].x - s.points[i - 1].x, s.points[i].y - s.points[i - 1].y);
+            }
+        });
+        return { strokes: strokes, points: points, length: length };
+    }
+
+    /* =========================================================
+       8. 文字转轨迹（离屏渲染 + 逐行扫描像素）
+       ========================================================= */
+
+    /**
+     * 把文字转成扫描线笔画
+     * @param {string} text        文字内容
+     * @param {number} sizeMm      目标字号（mm）
+     * @param {string} family      CSS 字体族
+     * @param {number} step        扫描步长（mm），越小越精细
+     * @returns {Array} 每项为 [{x,y},{x,y}] 的水平线段
+     */
+    function buildTextStrokes(text, sizeMm, family, step) {
+        const SS = 3;                                    // 超采样倍数，提高像素采样精度
+        const W = SIZE * SS;
+        const off = document.createElement('canvas');
+        off.width = W;
+        off.height = W;
+        const octx = off.getContext('2d');
+        if (!octx) return [];
+
+        const maxW = SIZE - LETTERBOX * 2;               // 可用宽度（留白）
+        const maxH = SIZE - LETTERBOX * 2;
+        let size = clamp(Number(sizeMm) || 48, 4, SIZE);
+
+        // 测量并自动缩放，保证整体不超出 256×256
+        octx.font = '600 ' + size + 'px ' + family;
+        const rawW = octx.measureText(text).width || size;
+        if (rawW > maxW) size = size * (maxW / rawW);
+        if (size > maxH) size = maxH;
+
+        // 用逻辑坐标绘制（缩放 SS 倍到离屏画布）
+        octx.setTransform(SS, 0, 0, SS, 0, 0);
+        octx.clearRect(0, 0, SIZE, SIZE);
+        octx.font = '600 ' + size + 'px ' + family;
+        octx.textAlign = 'center';
+        octx.textBaseline = 'middle';
+        octx.fillStyle = '#000000';
+        octx.fillText(text, SIZE / 2, SIZE / 2);         // 整体居中
+
+        const data = octx.getImageData(0, 0, W, W).data;
+        const stepPx = Math.max(1, Math.round((Number(step) || 2) * SS));
+        const segments = [];
+
+        // 逐行扫描：把每行连续的墨迹区间转为一条水平线段
+        for (let y = 0; y < W; y += stepPx) {
+            let runStart = -1;
+            for (let x = 0; x <= W; x++) {
+                const inked = x < W && data[((y * W) + x) * 4 + 3] > 128;
+                if (inked && runStart < 0) {
+                    runStart = x;
+                } else if (!inked && runStart >= 0) {
+                    // 记录 [runStart, x) 区间，转换为 mm 坐标。
+                    // 合并不足 1 个像素的碎片，减少无意义短笔
+                    const x1 = runStart / SS;
+                    const x2 = (x - 1) / SS;
+                    if (x2 - x1 >= 0.4) {
+                        const yy = (y + 0.5) / SS;
+                        segments.push([
+                            { x: clamp(x1, 0, SIZE), y: clamp(yy, 0, SIZE) },
+                            { x: clamp(x2, 0, SIZE), y: clamp(yy, 0, SIZE) }
+                        ]);
+                    }
+                    runStart = -1;
+                }
+            }
+        }
+        return segments;
+    }
+
+    /** 生成文字轨迹并加入画布 */
+    function addTextStrokes() {
+        const text = (textInput.value || '').trim();
+        if (!text) {
+            showHint(boardHint, 'warn', '请先在「文字轨迹」输入框中填写文字。');
+            return;
+        }
+        const family = fontSelect.value;
+        const sizeMm = parseFloat(fontSize.value) || 48;
+        const step = parseInt(scanStep.value, 10) || 2;
+
+        const segments = buildTextStrokes(text, sizeMm, family, step);
+        if (!segments.length) {
+            showHint(boardHint, 'err', '未能从文字中提取到笔画像素，请更换字体或调大字号后重试。');
+            return;
+        }
+
+        // 整组文字轨迹作为一次撤销单元
+        state.groupStack.push(state.strokes.length);
+        segments.forEach(function (seg) {
+            state.strokes.push({
+                points: seg,
+                width: 1.2,
+                color: '#1a2c3e'
+            });
+        });
+        redraw();
+
+        // 先做统一收尾（内部会刷新「当前画布」提示），随后用更具体的文字轨迹提示覆盖
+        afterBoardChange();
+        const info = measureStrokes();
+        if (segments.length > MAX_TEXT_STROKES) {
+            showHint(boardHint, 'warn', '文字已生成 ' + segments.length + ' 段轨迹（数量较多，G-code 行数会变大），可调大「扫描精度」数值以减少笔数；当前画布共 ' + info.strokes + ' 笔 / ' + info.points + ' 点。');
+        } else {
+            showHint(boardHint, 'ok', '已生成文字轨迹「' + text + '」：' + segments.length + ' 段（描边示意，精度受字号与扫描步长影响）；当前画布共 ' + info.strokes + ' 笔 / ' + info.points + ' 点。');
+        }
+    }
+
+    /* =========================================================
+       9. 生成、统计与预览
+       ========================================================= */
+
+    function buildAndRender(auto) {
+        const speed = parseInt(speedInput.value, 10) || 1500;
+        speedView.value = 'F' + Math.round(clamp(speed, 100, 12000));
+
+        const result = buildGcode(state.strokes, { speed: speed });
+        state.gcode = result.text;
+        state.lastStats = result.stats;
+        state.generated = true;
+
+        // 预览与统计（预览文本即下载内容）
+        preview.value = result.text;
+        statStrokes.textContent = String(result.stats.strokes);
+        statPoints.textContent = String(result.stats.points);
+        statLength.textContent = result.stats.length.toFixed(1) + ' mm';
+        statTime.textContent = formatDuration(result.stats.seconds);
+        btnDownload.disabled = false;
+
+        if (!auto) {
+            if (result.stats.strokes === 0) {
+                showHint(genHint, 'warn', '画布为空，已生成仅含头部指令、基础设置与末尾回零的 G-code。');
+            } else if (result.stats.overflow > 0) {
+                showHint(genHint, 'warn', '已生成 ' + result.stats.lines + ' 行，其中 ' + result.stats.overflow + ' 个点超出 0~256 范围，已钳制到边界。');
+            } else {
+                showHint(genHint, 'ok', '已生成 ' + result.stats.lines + ' 行 G-code：' + result.stats.strokes + ' 笔 / ' + result.stats.points + ' 点，坐标均在 0~256 内。');
+            }
+        }
+        return result;
+    }
+
+    /** 下载：Blob + a[download]，内容与预览完全一致 */
+    function downloadGcode() {
+        const text = preview.value;
+        if (!text) {
+            showHint(genHint, 'warn', '请先点击「生成 G-code」，预览区有内容后才能下载。');
+            return;
+        }
+        const fileName = buildFileName(new Date());
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        window.setTimeout(function () {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 3000);
+        showHint(genHint, 'ok', '已开始下载：' + fileName + '（' + text.split('\n').length + ' 行）');
+    }
+
+    /* =========================================================
+       10. 撤销 / 清空
+       ========================================================= */
+    function undoLast() {
+        if (!state.groupStack.length) {
+            showHint(boardHint, 'warn', '没有可撤销的内容。');
+            return;
+        }
+        const start = state.groupStack.pop();
+        state.strokes.length = start;   // 整组（含文字轨迹）一次撤销
+        state.current = null;
+        redraw();
+        afterBoardChange();
+    }
+
+    function clearBoard() {
+        state.strokes.length = 0;
+        state.groupStack.length = 0;
+        state.current = null;
+        redraw();
+        hideHint(boardHint);
+        hideHint(genHint);
+        if (state.generated) buildAndRender(true);
+    }
+
+    /* =========================================================
+       11. 登录状态（与首页一致）
+       ========================================================= */
+    function checkLoginStatus() {
+        const userSection = document.getElementById('userSection');
+        let user = null;
+        try { user = localStorage.getItem('currentUser'); } catch (err) { user = null; }
+        if (user) {
+            try {
+                const userData = JSON.parse(user);
+                const name = (userData && userData.username) ? userData.username : '用户';
+                const initial = String(name).charAt(0).toUpperCase();
+                userSection.innerHTML = '<div class="user-avatar" onclick="location.href=\'profile.html\'">' + initial + '</div>';
+                return;
+            } catch (err) { /* 解析失败则回退到登录链接 */ }
+        }
+        userSection.innerHTML = '<a href="login.html">登录/注册</a>';
+    }
+
+    /* =========================================================
+       12. 事件绑定
+       ========================================================= */
+    board.addEventListener('pointerdown', onPointerDown);
+    board.addEventListener('pointermove', onPointerMove);
+    board.addEventListener('pointerup', onPointerUp);
+    board.addEventListener('pointercancel', onPointerUp);
+    board.addEventListener('pointerleave', function (e) {
+        // 指针移出画布时结束当前笔画，避免"粘笔"
+        if (state.current && e.pointerType === 'mouse') onPointerUp(e);
+    });
+    board.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+    brushSize.addEventListener('input', function () {
+        brushSizeVal.textContent = parseFloat(brushSize.value).toFixed(1) + ' mm';
+    });
+    chkGrid.addEventListener('change', redraw);
+    chkOrigin.addEventListener('change', redraw);
+    chkBorder.addEventListener('change', redraw);
+
+    scanStep.addEventListener('input', function () {
+        scanStepVal.textContent = scanStep.value;
+    });
+
+    btnUndo.addEventListener('click', undoLast);
+    btnClear.addEventListener('click', clearBoard);
+    btnText.addEventListener('click', addTextStrokes);
+    btnBuild.addEventListener('click', function () {
+        buildAndRender(false);
+    });
+    btnDownload.addEventListener('click', downloadGcode);
+    speedInput.addEventListener('change', function () {
+        speedView.value = 'F' + Math.round(clamp(parseInt(speedInput.value, 10) || 1500, 100, 12000));
+        if (state.generated) buildAndRender(true);
+    });
+
+    // 回车快速生成文字轨迹
+    textInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); addTextStrokes(); }
+    });
+
+    // 画布尺寸自适应（devicePixelRatio 变化、窗口缩放都会重算）
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(initCanvas, 120);
+    });
+
+    /* =========================================================
+       13. 初始化
+       ========================================================= */
+    initCanvas();
+    checkLoginStatus();
+    brushSizeVal.textContent = parseFloat(brushSize.value).toFixed(1) + ' mm';
+    scanStepVal.textContent = scanStep.value;
+
+    // 暴露纯逻辑函数，便于无浏览器环境做单元测试
+    window.WriterTool = {
+        buildGcode: buildGcode,
+        finalizeTail: finalizeTail,
+        buildFileName: buildFileName,
+        formatDuration: formatDuration,
+        clamp: clamp,
+        SIZE: SIZE,
+        HEAD_LINES: HEAD_LINES,
+        INIT_LINES: INIT_LINES
+    };
+})();
+</script>
+</body>
+</html>
